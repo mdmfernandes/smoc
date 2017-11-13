@@ -1,0 +1,7 @@
+{
+    "socket": 
+    {
+        "socketFile": "/tmp/pythcad-socket",
+        "logFile": "pythcad-socket.log"
+    }
+}

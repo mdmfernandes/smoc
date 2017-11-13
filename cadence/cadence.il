@@ -5,7 +5,20 @@
 ;;  - Run simulaions                ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO
+(procedure loadSimulator()
+    load("loadSim.ocn")
+    ;; TODO
+)
+
+(procedure updateVariables()
+    load("varsSim.ocn")
+    ;; TODO
+)
+
+(procedure runSimulation()
+    load("runSim.ocn")
+    ;; TODO
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Server related functions         ;;
