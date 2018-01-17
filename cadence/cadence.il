@@ -26,7 +26,7 @@
 ;;  - Handling of server requests   ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Handles requests from the server (through the stdout)
+;; Handles requests from the server (through stdout)
 ;; 
 ;; @param {number} cid - Server handle
 ;; @param {string} request - Request received from the server
