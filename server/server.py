@@ -2,13 +2,9 @@
 
 """Server that stands between the optimizer and cadence."""
 
-import os
-import os.path
 import socket
 import sys
 import time
-
-from ..utils.file import read_yaml
 
 
 class Server(object):
@@ -19,26 +15,23 @@ class Server(object):
     send it back to the optimizer.
 
     Arguments:
-        sckt {file} -- socket for communication between optimizer and server
         cad_file {file} -- cadence stream
 
     Keyword Arguments:
         debug {boolean} -- if true send debug messages to cadence(default: {False})
     """
 
-    def __init__(self, sckt, cad_file, debug=False):
+    HOST = 'localhost'
+    PORT = '3000'
+
+    def __init__(self, cad_file, debug=False):
         """Create a new Server instance."""
 
-        self.sckt = sckt
         self.cad_file = cad_file
         self.cad_in = self.cad_file.stdin
         self.cad_out = self.cad_file.stdout
         self.cad_err = self.cad_file.stderr
         self.debug = debug
-
-        # Uninitialized variables
-        self.conn = None    # Socket object used for communication
-        self.addr = None    # The address bound to the socket on the optimizer
 
     def run(self):
         """Start the server."""
@@ -48,53 +41,50 @@ class Server(object):
         msg = self.recv_skill()
 
         # Start connection between the optimizer and the server (UNIX socket)
-        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
-        try:
-            os.remove("/tmp/pythcad_socket")
-        except OSError:
-            pass
+            # Start to listen to the socket
+            s.bind((Server.HOST, Server.PORT))
+            s.listen(1)
 
-        # Start to listen to the socket defined by the file
-        s.bind("/tmp/pythcad_socket")
-        s.listen(1)
+            # Waits for client connection
+            conn, addr = s.accept()
 
-        # Waits for client connection
-        self.conn, _ = s.accept()
+            with conn:
+                print('Connected by ', addr)
 
-        # Forwards the message received from Cadence
-        self.conn.sendall(msg)
+                # Forwards the message received from Cadence
+                conn.sendall(msg)
 
-        if self.debug is True:
-            self.send_debug('Client is connected!')
+                if self.debug is True:
+                    self.send_debug('Client is connected!')
 
-        while True:
+                while True:
+                    # Receive request from the optimizer
+                    # TODO: Meter assíncrono
+                    req = conn.recv(1024)
 
-            # Receive request from the optimizer
-            # TODO: Meter assíncrono
-            req = self.conn.recv(1024)
+                    # Check for request to end connection
+                    if req.upper() == "DONE":
+                        break
 
-            # Check for request to end connection
-            if req.upper() == "DONE":
-                break
+                    # Process the optimizer request
+                    expr = self.process_skill_request(req)
 
-            # Process the optimizer request
-            expr = self.process_skill_request(req)
+                    # Send the request to Cadence
+                    self.send_skill(expr)
 
-            # Send the request to Cadence
-            self.send_skill(expr)
+                    # Wait for the response from Cadence
+                    msg = self.recv_skill()
 
-            # Wait for the response from Cadence
-            msg = self.recv_skill()
+                    if self.debug is True:
+                        self.send_debug('Data sent to client: %s' % msg)
 
-            if self.debug is True:
-                self.send_debug('Data sent to client: %s' % msg)
+                    # Process the Cadence response
+                    obj = self.process_skill_response(msg)
 
-            # Process the Cadence response
-            obj = self.process_skill_response(msg)
-
-            # Send the message to the optimizer
-            self.conn.sendall(obj)
+                    # Send the message to the optimizer
+                    conn.sendall(obj)
 
         self.close()    # Stop the server
 
@@ -177,8 +167,6 @@ class Server(object):
 
     def close(self):
         """Close this server."""
-        self.conn.close()
-        os.remove("/tmp/pythcad_socket")
 
         # Send feedback to Cadence
         self.send_warn("Connection with the optimizer ended!")
@@ -190,10 +178,7 @@ class Server(object):
 def start_server():
     """Start the server"""
 
-    sckt = read_yaml()['socket']['file']
-
-    server = Server(sckt, sys, debug=True)
-
+    server = Server(sys, debug=True)
     server.run()
 
 

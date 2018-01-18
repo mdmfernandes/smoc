@@ -5,7 +5,7 @@
 import yaml
 
 
-def read_yaml(fname='config/freak_config.yaml'):
+def read_yaml(fname='../config/config.yaml'):
     """Read the given file using YAML.
 
     Arguments:

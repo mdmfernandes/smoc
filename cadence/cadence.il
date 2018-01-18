@@ -91,5 +91,6 @@ procedure ( start_pyth_server(serverPath)
 )
 
 serverHasStarted = 0
+path = getShellEnvVar("PY_SERVER")
 ; Starts the server
-start_pyth_server()
+start_pyth_serverpath(path)

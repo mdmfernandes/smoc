@@ -1,7 +1,4 @@
-{
-    "socket": 
-    {
-        "socketFile": "/tmp/pythcad-socket",
-        "logFile": "pythcad-socket.log"
-    }
-}
+# Server configuration
+server:
+    host: "localhost"
+    port: 3000
