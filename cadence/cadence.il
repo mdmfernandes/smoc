@@ -45,7 +45,7 @@ procedure( requestHandler(cid request)
             ; The "errsetstring" evaluates the request and returns the result,
             ; if valid, or an error message. E.g. if the request is a function,
             ; it executes the function and returns the result.
-            if( result = errsetstring(request 't') then
+            if( result = errsetstring(request 't) then
                 ; VER ISTO!!
                 sprintf(resultStr "%A\n" car(result))
             else
@@ -83,14 +83,14 @@ procedure( exitHandler(cid exitStatus)
 ;;
 ;; @param {string} serverPath - The server path
 ;;
-procedure ( start_pyth_server(serverPath)
+procedure( startServer()
 	printf("[INFO] Starting server process...\n")
-	tmpPath = simplifyFilename(serverPath)
-	ipcBeginProcess(tmpPath "" 'requestHandler 'errorHandler 'errorHandler "")
-	; ipcWriteProcess(cid "Server connected to Cadence\n")
+    serverHasStarted = 0
+	path = simplifyFileName(getShellEnvVar("PY_SERVER"))
+	cid = ipcBeginProcess(path "" 'requestHandler 'errorHandler 'exitHandler "")
+	ipcWriteProcess(cid "Server connected to Cadence\n")
 )
 
 serverHasStarted = 0
-path = getShellEnvVar("PY_SERVER")
 ; Starts the server
-start_pyth_serverpath(path)
+startServer()

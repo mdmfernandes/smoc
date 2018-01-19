@@ -22,7 +22,7 @@ class Server(object):
     """
 
     HOST = 'localhost'
-    PORT = '3000'
+    PORT = 3000
 
     def __init__(self, cad_file, debug=False):
         """Create a new Server instance."""
@@ -38,55 +38,66 @@ class Server(object):
 
         # Receive initial message from cadence, to check connectivity
         # TODO: METER AQUI UM TRY!!!
-        msg = self.recv_skill()
+        # msg = self.recv_skill()
 
-        # Start connection between the optimizer and the server (UNIX socket)
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            # Start connection between the optimizer and the server (UNIX socket)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                # define socket options to allow the reuse of the same addr
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                # Start to listen to the socket
+                s.bind((Server.HOST, Server.PORT))
+                s.listen(1)
 
-            # Start to listen to the socket
-            s.bind((Server.HOST, Server.PORT))
-            s.listen(1)
+                # Waits for client connection
+                conn, addr = s.accept()
 
-            # Waits for client connection
-            conn, addr = s.accept()
+                print("Connected to the client: ", addr)
 
             with conn:
-                print('Connected by ', addr)
-
                 # Forwards the message received from Cadence
-                conn.sendall(msg)
+                # conn.sendall(msg)
+                conn.sendall(str(addr).encode('utf8'))
 
                 if self.debug is True:
-                    self.send_debug('Client is connected!')
+                    self.send_debug(
+                        str('Client is connected to address ' + addr))
 
                 while True:
                     # Receive request from the optimizer
                     # TODO: Meter assíncrono
-                    req = conn.recv(1024)
+                    req = conn.recv(1024).decode('utf8')
+
+                    print("Received: ", req)
 
                     # Check for request to end connection
                     if req.upper() == "DONE":
                         break
 
                     # Process the optimizer request
-                    expr = self.process_skill_request(req)
+                    #expr = self.process_skill_request(req)
 
                     # Send the request to Cadence
-                    self.send_skill(expr)
+                    # self.send_skill(expr)
 
                     # Wait for the response from Cadence
-                    msg = self.recv_skill()
+                    #msg = self.recv_skill()
 
                     if self.debug is True:
                         self.send_debug('Data sent to client: %s' % msg)
 
                     # Process the Cadence response
-                    obj = self.process_skill_response(msg)
+                    obj = self.process_skill_response(req)
 
                     # Send the message to the optimizer
-                    conn.sendall(obj)
+                    conn.sendall(obj.encode('utf-8'))
 
-        self.close()    # Stop the server
+        #except (OSError, AttributeError, IOError) as err:
+            #print("Error: {0}".format(err))
+        except:
+            print("Error: ", sys.exc_info()[0])
+        finally:
+            self.close()    # Stop the server
 
     def send_skill(self, expr):
         """Send a skill expression to Cadence for evaluation.
@@ -169,7 +180,7 @@ class Server(object):
         """Close this server."""
 
         # Send feedback to Cadence
-        self.send_warn("Connection with the optimizer ended!")
+        self.send_warn("Connection with the optimizer ended!\n\n")
         self.cad_out.close()  # close stdout
         self.cad_err.close()  # close stderr
         self.cad_file.exit(255)  # close connection to cadence (code up to 255)
@@ -178,7 +189,7 @@ class Server(object):
 def start_server():
     """Start the server"""
 
-    server = Server(sys, debug=True)
+    server = Server(sys, debug=False)
     server.run()
 
 

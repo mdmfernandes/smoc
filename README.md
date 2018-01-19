@@ -4,23 +4,16 @@ Python optimizer for circuit design and optimization using Cadence Virtuoso
 
 ## Usage
 
-* Place the folders **cadence** and **server** in the machine that runs Cadence (i.e. the **server**).
-
-* Place the folder **opycad** in your computer.
-
-* Connect your computer to **server** through ssh using local port forwarding for the port specified in the file *config.yaml*. Ex:
+1. Place the packages **cadence/** and **server/** in the machine that runs Cadence (i.e. the **server**).
+2. Place the package **opycad/** in your computer.
+3. Connect your computer to **server** through ssh using local port forwarding for the port specified in the file *config.yaml*. Ex:
 
 ```Shell script
 ssh -L LOCAL_PORT:localhost:HOST_PORT user@SERVER_IP
 ```
 
-* Start Cadence, in the **server**, through command line using the command below. Note that `$CADENCE_FOLDER` refers to the folder **cadence** of the project.
-
-```Shell script
-icfb -nograph -restore $CADENCE_FOLDER/cadence.il
-```
-
-* Start *opycad.py* in your computer.
+4. Run Cadence, in the **server**, through the script *run_cadence.sh*.
+5. Run *opycad.py* in your computer.
 
 ## Contributing
 

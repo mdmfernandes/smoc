@@ -6,7 +6,7 @@ from __future__ import print_function
 import socket
 import sys
 
-from .utils.file import read_yaml
+from utils.file import read_yaml
 
 
 def main():
@@ -20,33 +20,39 @@ def main():
         get_input = raw_input
 
     print("Connecting...")
-    # if os.path.exists("/tmp/pythcad_socket"):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
-        server = read_yaml()['server']
+            server = read_yaml()['server']
 
-        s.connect((server['host'], server['port']))
+            s.connect((server['host'], server['port']))
 
-        print("Ready.")
-        print("Ctrl-C to quit.")
-        print("Sending 'DONE' shuts down the server and quits.")
-        while True:
-            try:
-                x = get_input("py> ")
-                if x != "":
-                    print("SEND:", x)
-                    s.sendall(x)
+            data = s.recv(1024).decode('utf8')
+            
+            print("Connected to server with the address", data)
+            print("Sending 'DONE' shuts down the server and quits.")
 
-                    if x.upper() == "DONE":
-                        print("Shutting down.")
-                        break
-            except KeyboardInterrupt:
-                print("Shutting down.")
+            while True:
+                try:
+                    x = get_input("py> ")
+                    if x != "":
+                        print("SEND:", x)
+                        s.sendall(x.encode('utf8'))
 
-            data = s.recv(1024)
-            print('Data received from pys: %s' % data)
+                        if x.upper() == "DONE":
+                            print("Shutting down.")
+                            break
+                except KeyboardInterrupt:
+                    print("Shutting down.")
 
-    print("END OF CLIENT")
+                data = s.recv(1024).decode('utf8')
+                print('Data received from pys: %s' % data)
+
+    except OSError as err:
+        print("Error: {0}".format(err))
+        print("Check if server is running and try again...!")
+    else:
+        print("END OF CLIENT")
 
 
 if __name__ == "__main__":
