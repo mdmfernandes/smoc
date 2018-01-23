@@ -33,18 +33,26 @@
 ;;
 procedure( requestHandler(cid request)
 	let( (result resultStr)
-        if( serverHasStarted == 0 then
-            if( request == "Python server has started!\n" then
+        if( serverHasStarted <= 0 then
+            if( request == "Python server has started!" then
                 serverHasStarted = 1
-                printf("[INFO] %s\n" request)
+                printf("[INFO] Cadence is connected to server!\n")
             else
                 printf("[INFO] Waiting for server... Message: %s\n" request)
             )
         else    ; if server has started
             printf("[INFO] Evaluating expression from server: %s\n" request)
+
+            msg = "Enviando de volta para o cliente\n"
+
+            ipcWriteProcess(cid sprintf(nil "%d\n" strlen(msg)))
+            ipcWriteProcess(cid msg)
+
+
             ; The "errsetstring" evaluates the request and returns the result,
             ; if valid, or an error message. E.g. if the request is a function,
             ; it executes the function and returns the result.
+            /*
             if( result = errsetstring(request 't) then
                 ; VER ISTO!!
                 sprintf(resultStr "%A\n" car(result))
@@ -56,6 +64,7 @@ procedure( requestHandler(cid request)
             ipcWriteProcess(cid sprintf(nil "%d\n" strlen(resultStr)))
             ; Then sends the data
             ipcWriteProcess(cid resultStr)
+            */
         )
     )
 )
@@ -66,7 +75,7 @@ procedure( requestHandler(cid request)
 ;; @param {string} errorMessage - Error message received from the server
 ;;
 procedure( errorHandler(cid errorMessage)
-	warn("Server error: %s\n" errorMessage)
+	warn("%s\n" errorMessage)
 )
 
 ;; Handles the server shutdown
@@ -86,9 +95,10 @@ procedure( exitHandler(cid exitStatus)
 procedure( startServer()
 	printf("[INFO] Starting server process...\n")
     serverHasStarted = 0
-	path = simplifyFileName(getShellEnvVar("PY_SERVER"))
-	cid = ipcBeginProcess(path "" 'requestHandler 'errorHandler 'exitHandler "")
-	ipcWriteProcess(cid "Server connected to Cadence\n")
+	cid = ipcBeginProcess("bash run_server.sh" "" 'requestHandler 'errorHandler 'exitHandler "")
+    msg = "Python server has started!\n"
+    ipcWriteProcess(cid sprintf(nil "%d\n" strlen(msg)))
+	ipcWriteProcess(cid msg)
 )
 
 serverHasStarted = 0
