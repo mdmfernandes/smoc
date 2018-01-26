@@ -16,7 +16,7 @@ def get_vars_from_file(file_path):
     """
     variables = {}
 
-    # Dictionary with metric prefixs
+    # Dictionary with metric prefixes
     prefix_dict = {
         'f': 'e-15',
         'p': 'e-12',
@@ -24,29 +24,27 @@ def get_vars_from_file(file_path):
         'u': 'e-6',
         'm': 'e-3',
         'k': 'e3',
+        'K': 'e3',  # Kilo can be 'k' or 'K' in Cadence
         'M': 'e6',
         'G': 'e9',
         'T': 'e12'
     }
 
-    pattern = r'^desVar\(\s*\"(\w+)\"\s*(\S+)\s*\)$'
+    pattern = r'desVar\(\s*"(?P<param>\w+)\"\s*(?P<value>\S+)\s*\)'
 
     with open(file_path, 'r') as f:
-        for line in f:
-            match = re.findall(pattern, line)
+        content = f.read()
 
-            key = match[0][0]
-            val = match[0][1]
+    for match in re.finditer(pattern, content):
+        try:    # try to convert value to float
+            value = float(match.group('value'))
+        except ValueError:
+            # If it's not possible, replace the prefixes by the respective exponentials
+            value = float(reduce((lambda a, kv: a.replace(*kv)),
+                                 prefix_dict.items(), match.group('value')))
 
-            # try to convert val to float
-            try:
-                val = float(val)
-            except ValueError:
-                # If it's not possible, replace the prefixs by the respective exponentials
-                val = reduce((lambda a, kv: a.replace(*kv)),
-                             prefix_dict.items(), val)
-
-            variables[key] = float(val)
+        # Save to dict
+        variables[match.group('param')] = value
 
     return variables
 
