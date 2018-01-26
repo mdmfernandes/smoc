@@ -39,8 +39,7 @@ class Client(object):
                 addr = self.recv_data()['data']
 
                 print(
-                    f"Connected to server with the address {addr[0]}:{addr[1]}")
-                print("Sending 'DONE' shuts down the server and quits.")
+                    f"[INFO] Connected to server with the address {addr[0]}:{addr[1]}")
 
             except:
                 print("Connect Exception")
@@ -109,8 +108,6 @@ class Client(object):
         except (TypeError, ValueError):
             raise Exception('Received data is not in JSON format')
 
-        print(f"OBJECT: {obj}")
-
         return obj
 
     def recv_bytes(self, n_bytes):
@@ -138,16 +135,6 @@ class Client(object):
             data += packet
 
         return data
-
-    @staticmethod
-    def process_request(req):
-        # TODO
-        return req
-
-    @staticmethod
-    def process_response(res):
-        # TODO
-        return res
 
     def close(self):
         """Close the socket"""

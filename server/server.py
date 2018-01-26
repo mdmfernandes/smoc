@@ -1,14 +1,17 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # The first line is a shebang to execute the server from shell (./)
 """Server that stands between the optimizer and cadence."""
 
+import json
+import os
 import socket
+import struct
 import sys
 import time
-import struct
-import json
+
+from .util import get_vars_from_file, store_vars_in_file
 
 
 class Server(object):
@@ -29,14 +32,13 @@ class Server(object):
     HOST = 'localhost'
     PORT = 3000
 
-    def __init__(self, cad_file, is_cadence=True, debug=False):
+    def __init__(self, cad_file, is_cadence=True):
         """Create a new Server instance."""
         self.cad_file = cad_file
         self.server_in = self.cad_file.stdin
         self.server_out = self.cad_file.stdout
         self.server_err = self.cad_file.stderr
         self.is_cadence = is_cadence
-        self.debug = debug
 
         # Unintialized variables
         self.conn = None
@@ -68,53 +70,51 @@ class Server(object):
                 # Receive socket info from client
                 sockname = self.recv_data()['data']
 
-                if not self.is_cadence:
-                    print("Connected to client with the address {0}:{1}".format(sockname[0], sockname[1]))
+                if self.is_cadence:
+                    self.send_skill(
+                        f"Connected to client with the address {sockname[0]}:{sockname[1]}")
+
+                else:
+                    print("Connected to client with the address {0}:{1}".format(
+                        sockname[0], sockname[1]))
 
                 data = dict(data=addr)
                 self.send_data(data)
 
-                if self.is_cadence:
-                    self.send_skill(f"{addr[0]}:{addr[1]}")
-
-                    self.recv_skill()
-
-                    if self.debug is True:
-                        self.send_debug(
-                            str("Client is connected to address {0}:{1}".format(addr[0], addr[1])))
-
                 while True:
                     # Receive request from the optimizer
                     req = self.recv_data()
-                    req = req['data']
-
-                    # Check for request to end connection
-                    if req.upper() == "DONE":
-                        break
 
                     if self.is_cadence:
                         # Process the optimizer request
-                        #expr = self.process_skill_request(req)
+                        expr = self.process_skill_request(req)
 
-                        expr = req
+                        if expr == 0:
+                            break
+                        elif expr is None:
+                            typ = 'error'
+                            obj = "There was an error while processing the sent data"
+                        else:
+                            # Send the request to Cadence
+                            self.send_skill(expr)
 
-                        # Send the request to Cadence
-                        self.send_skill(expr)
+                            if expr != 'info':
+                                #
+                                # Wait for the response from Cadence
+                                #
+                                res = self.recv_skill()
 
-                        # Wait for the response from Cadence
-                        #msg = self.recv_skill()
-
-                        if self.debug:
-                            self.send_debug('Data sent to client: %s' % msg)
-
-                        # Process the Cadence response
-                        obj = self.process_skill_response(req)
+                                # Process the Cadence response
+                                typ, obj = self.process_skill_response(res)
+                                self.send_data(dict(type=typ, data=obj))
                     else:
                         print("Received data:", req)
-                        obj = req
 
-                    # Send the message to the optimizer
-                    self.send_data(dict(data=obj))
+                        if req['data'].lower() == 'exit':
+                            break
+                        else:
+                            typ = 'info'
+                            self.send_data(dict(type='info', data=req))
 
         # except (OSError, AttributeError, IOError) as err:
             #print("Error: {0}".format(err))
@@ -265,12 +265,37 @@ class Server(object):
             req {dict} -- request object
 
         Returns:
-            expre {string or None} -- expression to be evaluated by Cadence
+            expr {string or None} -- expression to be evaluated by Cadence
         """
-        # TODO: for now it's just a string
-        expr = req
+        try:
+            typ = req['type']
+            data = req['data']
+        except KeyError as err:  # if the key does not exist
+            self.send_warn(f"Error: {err}")
+            return None
 
-        return expr
+        if typ == 'info':
+            if data.lower() == 'exit':
+                return 0
+            else:
+                return typ
+        elif typ == 'loadSimulator' or typ == 'updateAndRun':
+            file_path = os.environ.get('SCRIPT_PATH')
+            if typ == 'loadSimulator':
+                file_path += "/loadSimulator.ocn"
+                return f'loadSimulator( "{file_path}" )'
+            elif typ == 'updateAndRun':
+                file_path += "/vars.ocn"
+
+                store_vars_in_file(data, file_path)
+
+                return f'updateAndRun( "{file_path}" )'
+            else:
+                self.send_warn("Wrong SCRIPT_PATH.")
+                return None
+        else:
+            self.send_warn("Invalid object type sent from the client.")
+            return None
 
     def process_skill_response(self, msg):
         """Process the skill response from Cadence.
@@ -282,9 +307,10 @@ class Server(object):
             obj {dict} -- response object
         """
         # TODO: for now it's just a string
+        typ = 'info'
         obj = str(msg)
 
-        return obj
+        return typ, obj
 
     def close(self):
         """Close this server."""
@@ -300,7 +326,7 @@ def start_server():
     # Check call argumments
     is_cadence = (len(sys.argv) != 2)
 
-    server = Server(sys, is_cadence, debug=False)
+    server = Server(sys, is_cadence)
     server.run()
 
 

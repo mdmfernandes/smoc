@@ -2,13 +2,17 @@
 # -*- coding: utf-8 -*-
 """Optimizer root module"""
 
+import sys
+
 from util.file import read_yaml
 from interface.client import Client
 from interface.menu import print_menu
 
+def start_simulator():
+    pass
 
-def run_client():
-    """Run the client: Send and receive data to/from server"""
+def update_and_run():
+    pass
 
 
 def main():
@@ -23,26 +27,37 @@ def main():
         client = Client(host, port)
     except (OSError, KeyboardInterrupt) as err:
         print("ClientError: {0}".format(err))
+        return 0
 
     # Program loop
     while True:
         try:
-            x = input("py> ")
-            if x != "":
-                print("SEND:", x)
+            option = print_menu()
 
-                client.send_data(dict(type='info', data=x))
+            if not option:  # if option == 0
+                print("Shutting down.")
+                data = dict(type='info', data='exit')
+                client.send_data(data)
+                break
+            elif option == 1:
+                data = dict(type='loadSimulator', data='ola')
+            elif option == 2:
+                data = dict(type='updateAndRun', data='updateAndRun')
+            else:
+                raise RuntimeError("Nunca devia ter chegado aqui!!!")
 
-                if x.upper() == "DONE":
-                    print("Shutting down.")
-                    break
+            client.send_data(data)
+
+            #
+            # Wait for data from server
+            #
+            data = client.recv_data()
+            data = data['data']
+            print('Data received from pys: {}'.format(data))
+
         except:
-            print("Keyboard Interrupt")
+            print(f"my Error: {sys.exc_info()}")
             raise
-
-        data = client.recv_data()
-        data = data['data']
-        print('Data received from pys: {}'.format(data))
 
     client.close()  # Close the socket
     print("--- END OF CLIENT ---")

@@ -12,8 +12,8 @@ Python optimizer for circuit design and optimization using Cadence Virtuoso
 ssh -L LOCAL_PORT:localhost:HOST_PORT user@SERVER_IP
 ```
 
-4. Run Cadence, in the **server**, through the script *run_cadence.sh*.
-5. Run *opycad.py* in your computer.
+4. Run Cadence, in the **server**, by executing the script *start_cadence.sh* (it should have execution permissions).
+5. Run *main.py* in your computer.
 
 ## Contributing
 
@@ -42,3 +42,6 @@ TODO: Write license
 ## Acknowledgments
 
 TODO: Write acknowledgments
+
+https://stackoverflow.com/questions/41816973/modulenotfounderror-what-does-it-mean-main-is-not-a-package
+https://www.python.org/dev/peps/pep-0328/

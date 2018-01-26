@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 """Print the program menu and checks for a valid input"""
 
 def print_menu():
@@ -17,7 +16,7 @@ def print_menu():
 
     options = menu.keys()
 
-    print("############### OPYCAD ###############")
+    print("\n############### OPYCAD ###############")
 
     for entry in options:
         # print("{} - {}".format(entry, menu[entry]))

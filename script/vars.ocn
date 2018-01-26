@@ -1,0 +1,4 @@
+desVar(	  "wdt" 10	)
+desVar(	  "vgs" 300e-3	)
+desVar(	  "res" 1e3	)
+desVar(	  "len" 0.14	)

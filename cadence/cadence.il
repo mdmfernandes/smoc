@@ -4,27 +4,46 @@
 ;;  - Update design variables       ;;
 ;;  - Run simulaions                ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(procedure loadSimulator()
-    load("loadSim.ocn")
+procedure( loadSimulator(filePath)
+    load(filePath)
     ;; TODO
+    msg = "Veio ao loadSimulator"
+    
 )
 
-(procedure updateVariables()
-    load("varsSim.ocn")
+procedure( updateAndRun(filePath)
+    load(filePath)
+    runSimulation()
     ;; TODO
+    msg = "Veio ao updateAndRun com o file "
+
+    strcat(msg filePath )
 )
 
-(procedure runSimulation()
-    load("runSim.ocn")
+procedure( runSimulation()
+    load("script/run.ocn")
     ;; TODO
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Server related functions         ;;
 ;;  - Start python server           ;;
-;;  - Handling of server requests   ;;
+;;  - Handle server requests        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Send data to server. First it sends the data size and then the message
+;; 
+;; @param {number} cid - Server handle
+;; @param {string} msg - data to send
+;;
+procedure( sendData(cid msg)
+    
+    printf("[INFO] Sending message to server: %s\n" msg)
+    ; First sends the size of the data to send
+    ipcWriteProcess(cid sprintf(nil "%d\n" strlen(msg)))
+    ; Then sends the data
+    ipcWriteProcess(cid msg)
+)
 
 ;; Handles requests from the server (through stdout)
 ;; 
@@ -41,30 +60,20 @@ procedure( requestHandler(cid request)
                 printf("[INFO] Waiting for server... Message: %s\n" request)
             )
         else    ; if server has started
-            printf("[INFO] Evaluating expression from server: %s\n" request)
-
-            msg = "Enviando de volta para o cliente\n"
-
-            ipcWriteProcess(cid sprintf(nil "%d\n" strlen(msg)))
-            ipcWriteProcess(cid msg)
-
-
-            ; The "errsetstring" evaluates the request and returns the result,
-            ; if valid, or an error message. E.g. if the request is a function,
-            ; it executes the function and returns the result.
-            /*
-            if( result = errsetstring(request 't) then
-                ; VER ISTO!!
-                sprintf(resultStr "%A\n" car(result))
+            ; if the request is to call a function
+            if( rexMatchp("(.*)" request) then
+                ; The "errsetstring" evaluates the request and returns the result,
+                ; if valid, or an error message. E.g. if the request is a function,
+                ; it executes the function and returns the result.
+                if( result = errsetstring(request 't) then
+                    sprintf(resultStr "%L\n" car(result))
+                else
+                    sprintf(resultStr "%s\n" car(nthelem(5 errset.errset)))
+                )
+                sendData(cid resultStr)
             else
-                sprintf(resultStr "%s\n" car(nthelem(5 errset.errset)))
+                printf("[INFOs] %s\n" request)
             )
-            printf("[INFO] Sending result to server: %s\n" resultStr)
-            ; First sends the size of the data to send
-            ipcWriteProcess(cid sprintf(nil "%d\n" strlen(resultStr)))
-            ; Then sends the data
-            ipcWriteProcess(cid resultStr)
-            */
         )
     )
 )
@@ -85,7 +94,7 @@ procedure( errorHandler(cid errorMessage)
 ;;
 procedure( exitHandler(cid exitStatus)
 	printf("Server has stopped with the exit code %d. I'm out!!!\n" exitStatus)  
-    hiRegTimer("exit()", 50)    ; exit Cadence
+    hiRegTimer("exit()", 10)    ; exit Cadence
 )
 
 ;; Starts the python server as child process for inter-process communication

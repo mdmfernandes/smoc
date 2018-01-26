@@ -1,0 +1,21 @@
+;; output file
+outf = outfile("output.txt" "w")
+
+run()   ;; run sim
+
+;; outputs
+vdsat = v("M0.m1:vdsat" ?result "dcOp-dc")
+vout_dc = VDC("/out")
+iout_dc = IDC("/M0/d")
+
+
+results()
+selectResults('dcOpInfo)
+report(?output outf ?reportStyle "spice")
+
+
+
+;;fprintf( outf "%s\t%f", vdsat.name, vdsat)
+
+close(outf)
+
