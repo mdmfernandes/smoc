@@ -16,7 +16,9 @@ definitionFile(
 )
 
 ;; analysis to perform
-analysis('dc ?saveOppoint t  )
+;analysis('dc ?saveOppoint t  )
+;analysis('tran ?stop "10m" ?errpreset "moderate" )
+analysis('ac ?start "10"  ?stop "10G"  )
 
 ;; variables to save
 save( 'v "/out" )

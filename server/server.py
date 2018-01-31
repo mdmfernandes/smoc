@@ -11,7 +11,9 @@ import struct
 import sys
 import time
 
-from .util import get_vars_from_file, store_vars_in_file
+# Aqui não se pode usar relative path (.util) porque o server vai ser
+# executado como __main__, e o python não reconhece __main__ como package
+from util import get_vars_from_file, store_vars_in_file, get_results_from_file
 
 
 class Server(object):
@@ -40,7 +42,7 @@ class Server(object):
         self.server_err = self.cad_file.stderr
         self.is_cadence = is_cadence
 
-        # Unintialized variables
+        # Uninitialized variables
         self.conn = None
 
     def run(self):
@@ -81,13 +83,15 @@ class Server(object):
                 data = dict(data=addr)
                 self.send_data(data)
 
+                count = 0   # request number
+
                 while True:
                     # Receive request from the optimizer
                     req = self.recv_data()
 
                     if self.is_cadence:
                         # Process the optimizer request
-                        expr = self.process_skill_request(req)
+                        expr = self.process_skill_request(req, count)
 
                         if expr == 0:
                             break
@@ -105,7 +109,10 @@ class Server(object):
                                 res = self.recv_skill()
 
                                 # Process the Cadence response
-                                typ, obj = self.process_skill_response(res)
+                                typ, obj = self.process_skill_response(
+                                    res, count)
+                                count += 1  # Update request number
+
                                 self.send_data(dict(type=typ, data=obj))
                     else:
                         print("Received data:", req)
@@ -116,8 +123,8 @@ class Server(object):
                             typ = 'info'
                             self.send_data(dict(type='info', data=req))
 
-        # except (OSError, AttributeError, IOError) as err:
-            #print("Error: {0}".format(err))
+        except (OSError, AttributeError, IOError) as err:
+            self.send_warn("Error: {0}".format(err))
         except:
             #print("Error: ", sys.exc_info()[0])
             self.send_warn(f"my Error: {sys.exc_info()}")
@@ -255,7 +262,7 @@ class Server(object):
         time.sleep(1)
         self.send_warn(f"[Debug] {msg}")
 
-    def process_skill_request(self, req):
+    def process_skill_request(self, req, count):
         """Process a skill request from the optimizer.
 
         Based on the given request object, returns the skill expression
@@ -263,6 +270,7 @@ class Server(object):
 
         Arguments:
             req {dict} -- request object
+            count {integer} -- request number
 
         Returns:
             expr {string or None} -- expression to be evaluated by Cadence
@@ -279,36 +287,54 @@ class Server(object):
                 return 0
             else:
                 return typ
-        elif typ == 'loadSimulator' or typ == 'updateAndRun':
-            file_path = os.environ.get('SCRIPT_PATH')
-            if typ == 'loadSimulator':
-                file_path += "/loadSimulator.ocn"
-                return f'loadSimulator( "{file_path}" )'
-            elif typ == 'updateAndRun':
-                file_path += "/vars.ocn"
+        elif typ == 'loadSimulator':
+            sim_path = os.environ.get('SCRIPT_PATH') + "/loadSimulator.ocn"
+            return f'loadSimulator( "{sim_path}" )'
 
-                store_vars_in_file(data, file_path)
+        elif typ == 'updateAndRun':
+            # Store circuit variables in file
+            vars_path = os.environ.get('VAR_PATH') + f"/vars{count}.ocn"
+            store_vars_in_file(data, vars_path)
+            # Redefine the path of the simulation results file
+            # to be used by cadence
+            out_file = os.environ.get('RESULT_PATH') + f"/out{count}.txt"
 
-                return f'updateAndRun( "{file_path}" )'
-            else:
-                self.send_warn("Wrong SCRIPT_PATH.")
-                return None
+            # create empty file
+            with open(out_file, 'w'):
+                pass
+
+            return f'updateAndRun( "{vars_path}" "RESULT_FILE={out_file}" )'
         else:
             self.send_warn("Invalid object type sent from the client.")
             return None
 
-    def process_skill_response(self, msg):
+    def process_skill_response(self, msg, count):
         """Process the skill response from Cadence.
 
         Arguments:
             msg {string} -- cadence response
 
         Returns:
+            typ {string} -- response type
             obj {dict} -- response object
         """
-        # TODO: for now it's just a string
-        typ = 'info'
-        obj = str(msg)
+        if "loadSimulator_OK" in msg:
+            typ = 'loadSimulator'
+            file_path = os.environ.get('SCRIPT_PATH') + '/vars.ocn'
+            # Get the original circuit variables (user defined) to send
+            obj = get_vars_from_file(file_path)
+        elif "updateAndRun_OK" in msg:
+            typ = 'updateAndRun'
+            # TODO: Get simulation results
+            #res_path = os.environ.get('RESULT_PATH') + f'/out{count}.txt'
+            #res = get_results_from_file(res_path)
+            out_file = os.environ.get('RESULT_PATH') + f"/out{count}.txt"
+
+            obj = get_results_from_file(out_file)
+
+        else:
+            typ = 'info'
+            obj = f"aa{msg}bb"
 
         return typ, obj
 

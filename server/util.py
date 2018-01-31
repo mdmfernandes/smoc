@@ -6,13 +6,13 @@ from functools import reduce
 
 
 def get_vars_from_file(file_path):
-    """Get the circuit variables from file and store them in a dictionary
+    """Get circuit variables from file and store in a dictionary
 
     Arguments:
         file_path {string} -- file path
 
     Returns:
-        variables {dictionary} -- circuit variables
+        variables {dict} -- circuit variables
     """
     variables = {}
 
@@ -50,7 +50,7 @@ def get_vars_from_file(file_path):
 
 
 def store_vars_in_file(variables, file_path):
-    """Store the circuit variables in a file
+    """Store circuit variables in a file
 
     Arguments:
         var {dict} -- dictionary with the circuit variables
@@ -60,3 +60,26 @@ def store_vars_in_file(variables, file_path):
         # Iterate over the dictionary and save to file
         for key, val in variables.items():
             f.write(f"desVar(\t \"{key}\" {val}\t)\n")
+
+
+def get_results_from_file(file_path):
+    """Get simulation results from file and store in a dictionary
+
+    Arguments:
+        file_path {string} -- file path
+
+    Returns:
+        results {dict} -- simulation results
+    """
+    results = {}
+
+    pattern = r'\s*(?P<param>\S+)\s+(?P<value>\S+)'
+
+    with open(file_path, 'r') as f:
+        content = f.read()
+
+    for match in re.finditer(pattern, content):
+        # Save to dict
+        results[match.group('param')] = float(match.group('value'))
+
+    return results

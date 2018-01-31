@@ -42,6 +42,3 @@ TODO: Write license
 ## Acknowledgments
 
 TODO: Write acknowledgments
-
-https://stackoverflow.com/questions/41816973/modulenotfounderror-what-does-it-mean-main-is-not-a-package
-https://www.python.org/dev/peps/pep-0328/

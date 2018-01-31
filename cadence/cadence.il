@@ -7,21 +7,26 @@
 procedure( loadSimulator(filePath)
     load(filePath)
     ;; TODO
-    msg = "Veio ao loadSimulator"
+    msg = "loadSimulator_OK"
     
 )
 
-procedure( updateAndRun(filePath)
+procedure( updateAndRun(filePath resultPath)
     load(filePath)
+
+    ;; Set results file path
+    setShellEnvVar(resultPath)
+
     runSimulation()
     ;; TODO
-    msg = "Veio ao updateAndRun com o file "
-
-    strcat(msg filePath )
+    msg = "updateAndRun_OK"
 )
 
 procedure( runSimulation()
-    load("script/run.ocn")
+    runPath = getShellEnvVar("SCRIPT_PATH")
+    print(runPath)
+    runFile = strcat(runPath "/run.ocn")
+    load(runFile)
     ;; TODO
 )
 
@@ -104,7 +109,7 @@ procedure( exitHandler(cid exitStatus)
 procedure( startServer()
 	printf("[INFO] Starting server process...\n")
     serverHasStarted = 0
-	cid = ipcBeginProcess("bash run_server.sh" "" 'requestHandler 'errorHandler 'exitHandler "")
+	cid = ipcBeginProcess("run_server.sh" "" 'requestHandler 'errorHandler 'exitHandler "")
     msg = "Python server has started!\n"
     ipcWriteProcess(cid sprintf(nil "%d\n" strlen(msg)))
 	ipcWriteProcess(cid msg)
