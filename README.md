@@ -1,4 +1,4 @@
-# pythoncad-optimizer (pyocad)
+# pythoncad-optimizer (opycad)
 
 Python optimizer for circuit design and optimization using Cadence Virtuoso
 
