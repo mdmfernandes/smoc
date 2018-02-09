@@ -62,6 +62,7 @@ def main():
 
     # Start the client
     try:
+        print("Connecting to server...")
         client = Client(host, port)
     except (OSError, KeyboardInterrupt) as err:
         print("ClientError: {0}".format(err))

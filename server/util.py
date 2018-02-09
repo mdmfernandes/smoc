@@ -39,7 +39,7 @@ def get_vars_from_file(file_path):
         try:    # try to convert value to float
             value = float(match.group('value'))
         except ValueError:
-            # If it's not possible, replace the prefixes by the respective exponentials
+            # If fails, replace the prefixes by the respective exponents
             value = float(reduce((lambda a, kv: a.replace(*kv)),
                                  prefix_dict.items(), match.group('value')))
 

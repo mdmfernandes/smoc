@@ -28,7 +28,6 @@ class Client(object):
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
             try:    # Try to connect to server
-                print("Connecting to server...")
                 self.socket.connect((host, port))
 
                 # Send the local socket name to the server
@@ -42,13 +41,13 @@ class Client(object):
                     f"[INFO] Connected to server with the address {addr[0]}:{addr[1]}")
 
             except:
-                print("Connect Exception")
                 self.close()
-                raise   # Re-raise this error to call the outter except
+                # Re-raise this error to call the outter except
+                raise RuntimeError('Error connecting to server')
 
         except:
-            print("Socket Exception")
-            raise       # Re-raise this error to call the except of the main
+            # Re-raise this error to call the except of the main
+            raise RuntimeError('Error creating socket')      
 
     def send_data(self, obj):
         """Send an object using sockets
@@ -80,7 +79,7 @@ class Client(object):
             sent = self.socket.send(data[total_sent:])
 
             if not sent:
-                raise RuntimeError("Socket connection broken")
+                raise RuntimeError("Socket connection broken while sending data")
 
             total_sent += sent
 
@@ -96,7 +95,7 @@ class Client(object):
         data_len = self.recv_bytes(4)
 
         if not data_len:
-            raise RuntimeError("Socket connection broken")
+            raise RuntimeError("Socket connection broken while receiving data")
 
         # >I means a unsigned int (I) with four bytes length, and big-endian byte order (>)
         msglen = struct.unpack('>I', data_len)[0]
@@ -126,7 +125,7 @@ class Client(object):
         data_len = len(data)
 
         while data_len < n_bytes:
-            packet = self.socket.recv(min(n_bytes - data_len, 1024))
+            packet = None #self.socket.recv(min(n_bytes - data_len, 1024))
 
             if not packet:
                 raise RuntimeError("Socket connection broken")

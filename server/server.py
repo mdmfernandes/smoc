@@ -126,7 +126,6 @@ class Server(object):
         except (OSError, AttributeError, IOError) as err:
             self.send_warn("Error: {0}".format(err))
         except:
-            #print("Error: ", sys.exc_info()[0])
             self.send_warn(f"my Error: {sys.exc_info()}")
 
         finally:
