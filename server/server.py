@@ -161,7 +161,7 @@ class Server(object):
             sent = self.conn.send(data[total_sent:])
 
             if not sent:
-                raise RuntimeError("Socket connection broken")
+                raise RuntimeError("Socket connection broken 1")
 
             total_sent += sent
 
@@ -177,7 +177,7 @@ class Server(object):
         data_len = self.recv_bytes(4)
 
         if not data_len:
-            raise RuntimeError("Socket connection broken")
+            raise RuntimeError("Socket connection broken 2")
 
         # >I means a unsigned int (I) with four bytes length, and big-endian byte order (>)
         msglen = struct.unpack('>I', data_len)[0]
@@ -210,7 +210,7 @@ class Server(object):
             packet = self.conn.recv(min(n_bytes - data_len, 1024))
 
             if not packet:
-                raise RuntimeError("Socket connection broken")
+                raise RuntimeError("Socket connection broken 3")
 
             data_len += len(packet)
             data += packet

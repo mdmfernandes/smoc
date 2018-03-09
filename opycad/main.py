@@ -3,14 +3,17 @@
 """Optimizer root module"""
 
 import sys
+
 import matplotlib.pyplot as plt
 
-from util.file import read_yaml
 from interface.client import Client
 from interface.menu import print_menu
+from util.file import read_yaml
+
 
 def start_simulator():
     pass
+
 
 def update_and_run():
     pass
@@ -49,11 +52,9 @@ def process_server_response(res):
 
 
 def main():
-    """Optimizer main function"""
-
+    """Optimizer main function."""
     plt.ion()
     plt.show()
-
 
     # Load server host, port
     server = read_yaml()['server']
@@ -64,8 +65,8 @@ def main():
     try:
         print("Connecting to server...")
         client = Client(host, port)
-    except (OSError, KeyboardInterrupt) as err:
-        print("ClientError: {0}".format(err))
+    except RuntimeError as err:
+        print("[ClientError] {0}".format(err))
         return 0
 
     data = {}
@@ -104,9 +105,9 @@ def main():
             if typ == 'vars':
                 variables = data
             elif typ == 'results':
-                #results = data
+                # results = data
                 for key, val in variables.items():
-                    variables[key] = val + val*0.1
+                    variables[key] = val + val * 0.1
             else:
                 print("Server response: Não devia ter vindo aqui")
 
@@ -120,3 +121,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    

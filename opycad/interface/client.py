@@ -40,14 +40,13 @@ class Client(object):
                 print(
                     f"[INFO] Connected to server with the address {addr[0]}:{addr[1]}")
 
-            except:
+            except (Exception, RuntimeError) as err:
                 self.close()
-                # Re-raise this error to call the outter except
-                raise RuntimeError('Error connecting to server')
-
-        except:
+                raise RuntimeError(f"Communication error: {err}")
+        except OSError as err:
             # Re-raise this error to call the except of the main
-            raise RuntimeError('Error creating socket')      
+            raise RuntimeError(f"Error creating socket: {err}")
+
 
     def send_data(self, obj):
         """Send an object using sockets
@@ -125,10 +124,10 @@ class Client(object):
         data_len = len(data)
 
         while data_len < n_bytes:
-            packet = None #self.socket.recv(min(n_bytes - data_len, 1024))
+            packet = self.socket.recv(min(n_bytes - data_len, 1024))
 
             if not packet:
-                raise RuntimeError("Socket connection broken")
+                raise RuntimeError("Socket connection broken while receiving a byte")
 
             data_len += len(packet)
             data += packet
