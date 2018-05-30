@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "C:\\Anaconda3\\python.exe",
+    "python.pythonPath": "C:\\Anaconda3\\envs\\optimizer\\python.exe",
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": true,
     "python.linting.pydocstyleEnabled": true,
