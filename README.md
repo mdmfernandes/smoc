@@ -1,4 +1,4 @@
-# Python CAdenve optIMizer (PAIM)
+# Python CAdence optIMizer (PAIM)
 
 Python optimizer for circuit design and optimization using Cadence Virtuoso
 
