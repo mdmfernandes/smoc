@@ -1,25 +1,22 @@
-;; set up the number notation, precision, etc, of the results
-; more info at doc "oceanref"
+;; Number notation
 setup(?numberNotation 'engineering)
 
-;; simulator and design folders
+;; Simulator
 simulator( 'spectre )
-design(	 "/home/tarzan/Projects/65nm_design_STM/simulation/commonSource/spectre/schematic/netlist/netlist")
-resultsDir( "/home/tarzan/Projects/65nm_design_STM/simulation/commonSource/spectre/schematic" )
+design(	 "/home/tarzan/simulation/cs/spectre/schematic/netlist/netlist")
+resultsDir( "/home/tarzan/simulation/cs/spectre/schematic" )
+
+;; Model Files
 modelFile( 
-    '("/home/tarzan/Projects/65nm_design_STM/misc_circuits/commonSource/oppoint.scs" "")
+    '("/home/umc/130nm/cadence/CDB/umc13mmrf/../Models/Spectre/l130e-rf-v131-control.scs" "")
+    '("/home/umc/130nm/cadence/CDB/umc13mmrf/../Models/Spectre/L130E_MM_HS_MAIN_V151.lib.scs" "")
+    '("/home/umc/130nm/cadence/CDB/umc13mmrf/../Models/Spectre/L130E_MM_TRIPLEWELL_MAIN_V151.lib.scs" "")
+    '("/home/tarzan/Desktop/oppoint.scs" "")
 )
 
-;; Modelfile
-definitionFile(
-    "models.scs"
-)
+;; Set simulations
+analysis('ac ?start "10k"  ?stop "1G"  )
+analysis('dc ?saveOppoint t  )
 
-;; analysis to perform
-;analysis('dc ?saveOppoint t  )
-;analysis('tran ?stop "10m" ?errpreset "moderate" )
-analysis('ac ?start "10"  ?stop "10G"  )
 
-;; variables to save
-save( 'v "/out" )
 temp( 27 ) 

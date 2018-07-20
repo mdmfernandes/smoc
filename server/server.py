@@ -37,9 +37,9 @@ class Server(object):
     def __init__(self, cad_file, is_cadence=True):
         """Create a new Server instance."""
         self.cad_file = cad_file
-        self.server_in = self.cad_file.stdin
-        self.server_out = self.cad_file.stdout
-        self.server_err = self.cad_file.stderr
+        self.server_in = cad_file.stdin
+        self.server_out = cad_file.stdout
+        self.server_err = cad_file.stderr
         self.is_cadence = is_cadence
 
         # Uninitialized variables

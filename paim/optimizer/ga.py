@@ -5,298 +5,332 @@ import array
 import copy
 import math
 import random
-\
+from multiprocessing import Pool
+
 from deap import algorithms, base, creator, tools
 from profilehooks import timecall
 
-from paim.util import plot as plt
-
-#                          0   1        2               3     4
-# Genes de um individuo - W1, W2 (=WB), L (=L1=L2=LB), Ib, Vbias(=VGS1)
-IND_SIZE = 5
-
-BOUND_LOW = [1e-6,   1e-6,   120e-9,     1e-6,   0.3]
-BOUND_UP = [100e-6, 100e-6, (4*120e-9), 100e-6, 0.7]
-
-# Constraints
-VDSAT_MIN = 80e-3
-VDSAT_MAX = 200e-3
-VDS_SAT_MIN = 50e-3
-GBW_MIN = 10e6
-GAIN_MIN = 30
-OS_MIN = 0.7
+# A class é só para ter tudo mais organizado...
 
 
-def uniform(low, up):
-    """Generate a random number between "low" and "up"
+class OptimizerNSGA2:
+    """A simulation-based circuit optimizer based on the NSGA2 algorithm
+
+    This optimizer is based on DEAP and requires connection to a circuit
+    simulation environment (e.g. Cadence Virtuoso). It was designed to be
+    circuit and simulator independent, requiring only the optimization
+    objectives and constraints, and the circuit variables.
+    After finishing the optimization, it returns the optimal pareto front
+    and the logbook.
 
     Arguments:
-        low {number} -- lower bound
-        up {number} -- upper bound
+        objectives {dict} -- Optimization objectives (fitness)
+        constraints {dict} -- Optimization constraints (circuit requirements)
+        circuit_vars {dict} -- Circuit design variables
+        pop_size {int} -- Population size
+        max_gen {int} -- Max generations
 
-    Returns:
-        {float} -- Generated number
+    Keyword Arguments:
+        client {handler} -- The client that communicates with the simulator (default: None)
+        mut_prob {float} -- Probability of mutation (default: 0.1)
+        cx_prob {float} -- Probability of crossover (default: 0.8)
+        mut_eta {int} -- Crowding degree of the mutation (default: 20)
+        cx_eta {int} -- Crowding degree of the crossover (default: 20)
     """
-    return [random.uniform(a, b) for a, b in zip(low, up)]
+    # pylint: disable=too-many-instance-attributes
 
+    def __init__(self, objectives, constraints, circuit_vars, pop_size,
+                 max_gen, client=None, mut_prob=0.1, cx_prob=0.8,
+                 mut_eta=20, cx_eta=20):
+        """Create the Optimizer"""
 
-############################################################
-# Equations
+        # INFO: The sum of mut_prob and cx_prob shall be in [0, 1]
+        self.mut_prob = mut_prob
+        self.cx_prob = cx_prob
+        self.objectives = objectives
+        self.constraints = constraints
+        self.circuit_vars = list(circuit_vars.keys())
+        self.pop_size = pop_size
+        self.max_gen = max_gen
 
-def gm(Id, VDsat):
-    return (2 * Id) / VDsat
+        if client is not None:
+            self.client = client
 
+        # Set bounds
+        bound_low = []
+        bound_up = []
 
-def VDsat(Id, W, L, K):
-    return math.sqrt((2 * Id * L) / (W * K))
+        for val in circuit_vars.values():
+            bound_low.append(val[0])
+            bound_up.append(val[1])
 
+        # Define the Fitness
+        fitness_weights = tuple(objectives.values())
+        creator.create("FitnessMulti", base.Fitness, weights=fitness_weights)
+        # Define an individual
+        creator.create("Individual", array.array, typecode='d',
+                       fitness=creator.FitnessMulti)
 
-def gds(Id, L, k):
-    return Id / ((k / 1e-3) * L)
+        toolbox = base.Toolbox()
 
+        # float gerado aleatoriamente
+        toolbox.register("attr_float", self.uniform, bound_low, bound_up)
+        # Define individuo como a lista de floats (itera pelo "attr_float"
+        # e coloca o resultado no "creator.Individual")
+        toolbox.register("individual", tools.initIterate,
+                         creator.Individual, toolbox.attr_float)
+        # Define a população como uma lista de individuos (o nro de individuos
+        # só é definido quando se inicializa a pop)
+        toolbox.register("population", tools.initRepeat,
+                         list, toolbox.individual)
 
-def gain(gm, gds1, gds2):
-    return 20 * math.log10(gm / (gds1 + gds2))
+        # operator for selecting individuals for breeding the next generation
+        toolbox.register("select", tools.selNSGA2)
 
+        # Parallel processing
+        #toolbox.register("map", Pool().map)
 
-def GBW(gm, Cout):
-    return gm / (2 * math.pi * Cout)
+        # register the goal / fitness function
+        toolbox.register("evaluate", self.eval_circuit)
+        # The constraints handling is made in the "eval_circuit" function
+        ##self.toolbox.decorate("evaluate", (self.feasibility, 0, self.distance))
 
+        # register the crossover operator
+        toolbox.register("mate", tools.cxSimulatedBinaryBounded,
+                         low=bound_low, up=bound_up, eta=cx_eta)
 
-def power(Vdd, Id):
-    return Vdd * 2 * Id
+        # register the mutation operator
+        toolbox.register("mutate", tools.mutPolynomialBounded,
+                         low=bound_low, up=bound_up,
+                         eta=mut_eta, indpb=mut_prob)
 
-def OS(Vdd, Vdsat):
-    Vmargin = 50e-3 * len(Vdsat)
-    
-    return Vdd - sum(Vdsat) - Vmargin
+        self.toolbox = toolbox
 
-#Variables
-VDD = 1.2
-VTn = 0.38
-VTp = 0.33
-KN = 500e-6
-KP = 100e-6
-############################################################
+    @staticmethod
+    def uniform(bound_low, bound_up):
+        """Generate a random number between "low" and "up". If the arguments
+        are a list, it generates a list.
 
-def eval_circuit(individual):
-    """Evaluate the circuit by performing simulation with the provided "individual"
+        Arguments:
+            low {list} -- lower bounds
+            up {list} -- upper bounds
 
-    Arguments:
-        individual {list} -- the individual to be evaluated
+        Returns:
+            {list} -- Generated numbers
+        """
+        return [random.uniform(a, b) for a, b in zip(bound_low, bound_up)]
 
-    Returns:
-        p {float} -- power consumption
-        g {float} -- DC gain
-    """
-    # TODO: Avaliar através de simulação
-    vdsat1 = VDsat(individual[3], individual[0], individual[2], KN)
-    vdsat2 = VDsat(individual[3], individual[1], individual[2], KP)
-    gm1 = gm(individual[3], vdsat1)
-    gdsN = gds(individual[3], individual[2], 8311)
-    gdsP = gds(individual[3], individual[2], 10670)
+    ##################################################################
+    ##################################################################
+    ##################################################################
+    ##################################################################
 
-    # Consumo
-    p = power(VDD, individual[3])
+    # def run_simulation(self, client, individual):
 
-    # Ganho
-    g = gain(gm1, gdsN, gdsP)
+    #     # res = ...
+    #     res = 1
+    #     return res
 
-    return p, g    # Aqui a ordem tem de corresponder à definida no fitness
+    # def handle_constraints(self, sim_res):
 
+    #     # Comparar constraints com res_sim...
 
-def feasibility(individual):
-    """Feasibility function for the individual
+    #     # Baixar fitness de acordo com o resultado obtido.
+    #     # NOTA: Ver https://www.sciencedirect.com/science/article/pii/S0045782501003231
+    #     penalty = 1
+    #     return penalty
 
-    Arguments:
-        individual {list} -- the individual to be evaluated
+    # https://groups.google.com/forum/#!topic/deap-users/SSd_zZ4XinI
 
-    Returns:
-        {boolean} -- True if feasible False otherwise
-    """
-    vdsat1 = VDsat(individual[3], individual[0], individual[2], KN)
-    vdsat2 = VDsat(individual[3], individual[1], individual[2], KP)
-    gm1 = gm(individual[3], vdsat1)
-    gdsN = gds(individual[3], individual[2], 8311)
-    gdsP = gds(individual[3], individual[2], 10670)
+    def teste(ola={"oi": 1, "coiso": 2}):
+        """[summary]
 
-    if (GBW(gm1, 10e-12) >= GBW_MIN) and (gain(gm1, gdsN, gdsP) >= GAIN_MIN) and (VDSAT_MIN <= vdsat1 < VDSAT_MAX) and (VDSAT_MIN <= vdsat2 < VDSAT_MAX) and (OS(1.2, [vdsat1, vdsat2]) >= OS_MIN):
-        return True
-    return False
+        Keyword Arguments:
+            ola {dict} -- [description] (default: {{"oi":1, "coiso":2}})
+        """
 
+        pass
 
-def distance(individual):
-    """A distance function to the feasibility region
+    def eval_circuit(self, individual):
+        """[summary]
 
-    Arguments:
-        individual {list} -- the individual to be evaluated
+        Arguments:
+            individual {[type]} -- [description]
+            client {[type]} -- [description]
+            objectives {[type]} -- [description]
 
-    Returns:
-        {float} -- distance function between an invalid individual and the valid region
-    """
-    vdsat1 = VDsat(individual[3], individual[0], individual[2], KN)
-    vdsat2 = VDsat(individual[3], individual[1], individual[2], KP)
-    gm1 = gm(individual[3], vdsat1)
-    gdsN = gds(individual[3], individual[2], 8311)
-    gdsP = gds(individual[3], individual[2], 10670)
+        Keyword Arguments:
+            constraints {[type]} -- [description] (default: {None})
 
-    gbw = GBW(gm1, 10e-12)
-    g = gain(gm1, gdsN, gdsP)
-    os = OS(1.2, [vdsat1, vdsat2])
+        Raises:
+            Exception -- [description]
 
-    if gbw < GBW_MIN:
-        return (gbw - GBW_MIN)**2
+        Returns:
+            [type] -- [description]
+        """
 
-    if g < GAIN_MIN:
-        return (g - GAIN_MIN)**2
+        # Run simulation (j)
 
-    if VDSAT_MAX < vdsat1 < VDSAT_MIN:
-        return (vdsat1 - VDSAT_MIN)**2
+        variables = {}
 
-    if VDSAT_MAX < vdsat2 < VDSAT_MIN:
-        return (vdsat2 - VDSAT_MIN)**2
-    # OS
-    return (os - OS_MIN)**2
+        for idx, key in enumerate(self.circuit_vars):
+            variables[key] = individual[idx]
 
-@timecall
-def myEaMuPlusLambda(population, toolbox, mu, lambda_, cxpb, mutpb, ngen,
-                     stats=None, halloffame=None, verbose=__debug__):
-    """This is the (mu + lambda) evolutionary algorithm.
-    ADAPTED FROM: https://github.com/DEAP/deap/blob/master/deap/algorithms.py
+        req = dict(type='updateAndRun', data=variables)
+        self.client.send_data(req)
 
-    The pseudocode goes as follow ::
-        evaluate(population)
-        for g in range(ngen):
-            offspring = varOr(population, toolbox, lambda_, cxpb, mutpb)
-            evaluate(offspring)
-            population = select(population + offspring, mu)
-    First, the individuals having an invalid fitness are evaluated. Second,
-    the evolutionary loop begins by producing *lambda_* offspring from the
-    population, the offspring are generated by the :func:`varOr` function. The
-    offspring are then evaluated and the next generation population is
-    selected from both the offspring **and** the population. Finally, when
-    *ngen* generations are done, the algorithm returns a tuple with the final
-    population and a :class:`~deap.tools.Logbook` of the evolution.
-    This function expects :meth:`toolbox.mate`, :meth:`toolbox.mutate`,
-    :meth:`toolbox.select` and :meth:`toolbox.evaluate` aliases to be
-    registered in the toolbox. This algorithm uses the :func:`varOr`
-    variation.
-    """
-    logbook = tools.Logbook()
-    logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
+        #
+        # Wait for data from server
+        #
+        res = self.client.recv_data()
 
-    # Evaluate the individuals with an invalid fitness
-    invalid_ind = [ind for ind in population if not ind.fitness.valid]
-    fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
-    for ind, fit in zip(invalid_ind, fitnesses):
-        ind.fitness.values = fit
+        try:
+            res_type = res['type']
+            sim_res = res['data']
+        except KeyError as err:  # if the key does not exist
+            print(f"Error: {err}")
 
-    if halloffame is not None:
-        halloffame.update(population)
+        if res_type != 'updateAndRun':
+            print("Simulation error!!!")
+            fitnesses = [1000, -1000]
+            return tuple(fitnesses)
 
-    record = stats.compile(population) if stats is not None else {}
-    logbook.record(gen=0, nevals=len(invalid_ind), **record)
+        print("Simulation Sucessfull")
+        fitnesses = []
 
-    # if verbose:
-    #    print logbook.stream
+        # Get the fitnesses
+        for obj in self.objectives.keys():
+            try:
+                fitnesses.append(sim_res[obj])
+            except KeyError as err:
+                raise Exception(
+                    f"Eval circuit: there's no key {err} in the simulation results.")
 
-    # Begin the generational process
-    for gen in range(1, ngen + 1):
-        # Vary the population
-        offspring = algorithms.varOr(population, toolbox, lambda_, cxpb, mutpb)
+        
+        # For now the penalty is applied with the same weight to all the objectives, but we
+        # can change this later for better performance
+        penalty = 1
+        
+        if self.constraints:
+            # Handling the contraints
+            pass  # penalty = self.handle_constraints(sim_res)
+        else:
+            # Just a test... se não estiverem na saturação
+            if sim_res["REG1"] != 2 or sim_res["REG2"] != 2:
+                print("penalty...")
+                penalty = 0.1
+            else:
+                penalty = 1
+
+        # Multiply the fitness by the penalty
+        #fitnesses = [fit * penalty for fit in fitnesses]
+        fitnesses = [(1/penalty) * fitnesses[0], penalty * fitnesses[1]]
+            
+        #print(f"FITNESS: {fitnesses}")
+        #print(f"VARS: {individual}")
+        #print(f"RESULTS: {sim_res}")
+
+        return tuple(fitnesses)
+
+    ##################################################################
+    ##################################################################
+    ##################################################################
+    ##################################################################
+
+    @timecall
+    def ga_mu_plus_lambda(self, mu, lambda_, statistics,
+                          halloffame=None, verbose=__debug__):
+        """This is the (mu + lambda) evolutionary algorithm.
+        ADAPTED FROM: https://github.com/DEAP/deap/blob/master/deap/algorithms.py
+
+        The pseudocode goes as follow ::
+            evaluate(population)
+            for g in range(ngen):
+                offspring = varOr(population, toolbox, lambda_, cxpb, mutpb)
+                evaluate(offspring)
+                population = select(population + offspring, mu)
+        First, the individuals having an invalid fitness are evaluated. Second,
+        the evolutionary loop begins by producing *lambda_* offspring from the
+        population, the offspring are generated by the :func:`varOr` function. The
+        offspring are then evaluated and the next generation population is
+        selected from both the offspring **and** the population. Finally, when
+        *ngen* generations are done, the algorithm returns a tuple with the final
+        population and a :class:`~deap.tools.Logbook` of the evolution.
+        This function expects :meth:`toolbox.mate`, :meth:`toolbox.mutate`,
+        :meth:`toolbox.select` and :meth:`toolbox.evaluate` aliases to be
+        registered in the toolbox. This algorithm uses the :func:`varOr`
+        variation.
+        """
+
+        # Create the population
+        population = self.toolbox.population(n=self.pop_size)
+        population = self.toolbox.select(population, len(population))
+
+        # Create the statistics
+        if statistics:
+            stats = tools.Statistics()
+            stats.register("pop", copy.deepcopy)
+
+        # Create the logbook
+        logbook = tools.Logbook()
+        logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
 
         # Evaluate the individuals with an invalid fitness
-        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+        invalid_ind = [ind for ind in population if not ind.fitness.valid]
+        fitnesses = self.toolbox.map(self.toolbox.evaluate, invalid_ind)
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = fit
 
-        # Update the hall of fame with the generated individuals
         if halloffame is not None:
-            halloffame.update(offspring)
+            halloffame.update(population)
 
-        # Select the next generation population
-        population[:] = toolbox.select(population + offspring, mu)
-
-        # Update the statistics with the new population
         record = stats.compile(population) if stats is not None else {}
-        logbook.record(gen=gen, nevals=len(invalid_ind), **record)
-        if verbose and not (gen % 5):   # Only prints multiples of 5 gens
-            # print(logbook.stream)
-            print(f"---- Gen: {gen} \t| # Evals: {len(invalid_ind)} -----")
+        logbook.record(gen=0, nevals=len(invalid_ind), **record)
 
-    return population, logbook
+        # if verbose:
+        #    print logbook.stream
 
+        # Begin the generational process
+        for gen in range(1, self.max_gen + 1):
+            # Vary the population
+            offspring = algorithms.varOr(population, self.toolbox, lambda_,
+                                         self.cx_prob, self.mut_prob)
 
-def main():
-    """Main function
-    """
-    ### SÓ PARA TESTES
-    random.seed(64)
+            # Evaluate the individuals with an invalid fitness
+            invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+            fitnesses = self.toolbox.map(self.toolbox.evaluate, invalid_ind)
+            for ind, fit in zip(invalid_ind, fitnesses):
+                ind.fitness.values = fit
 
-    # Registar os atributos dos indivuos e da população
-    toolbox = base.Toolbox()
+            # Update the hall of fame with the generated individuals
+            if halloffame is not None:
+                halloffame.update(offspring)
 
-    toolbox.pop_size = 200
-    toolbox.max_gen = 50
-    toolbox.cx_prob = 0.8  # 0.9
-    toolbox.mut_prob = 0.1  # 0.03
+            # Select the next generation population
+            population[:] = self.toolbox.select(population + offspring, mu)
 
-    # Creator
-    creator.create("FitnessMulti", base.Fitness, weights=(-1.0, 1.0))
-    creator.create("Individual", array.array, typecode='d',
-                   fitness=creator.FitnessMulti)
+            # Update the statistics with the new population
+            record = stats.compile(population) if stats is not None else {}
+            logbook.record(gen=gen, nevals=len(invalid_ind), **record)
+            if verbose:   # Only prints multiples of 5 gens (and not gen % 5)
+                # print(logbook.stream)
+                print(f"---- Gen: {gen} \t| # Evals: {len(invalid_ind)} -----")
 
-    # float gerado aleatoriamente
-    toolbox.register("attr_float", uniform, BOUND_LOW, BOUND_UP)
-    # Define individuo como a lista de floats (itera pelo "attr_float" e coloca o resultado no "creator.Individual")
-    toolbox.register("individual", tools.initIterate,
-                     creator.Individual, toolbox.attr_float)
-    # Define a população como uma lista de individuos (o nro de individuos só é definido quando se inicializa a pop)
-    toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+        return population, logbook
 
-    # Generic Operators
-    # register the goal / fitness function
-    toolbox.register("evaluate", eval_circuit)
-    toolbox.decorate("evaluate", tools.DeltaPenalty(feasibility, 0, distance))
+    def run_ga(self, stats=False, verbose=False):
+        """[summary]
 
-    # register the crossover operator
-    toolbox.register("mate", tools.cxSimulatedBinaryBounded,
-                     low=BOUND_LOW, up=BOUND_UP, eta=20.0)
+        Keyword Arguments:
+            stats {bool} -- [description] (default: {False})
+            verbose {bool} -- [description] (default: {False})
 
-    # register the mutation operator
-    toolbox.register("mutate", tools.mutPolynomialBounded,
-                     low=BOUND_LOW, up=BOUND_UP, eta=20.0, indpb=toolbox.mut_prob)
+        Returns:
+            [type] -- [description]
+        """
+        result, logbook = self.ga_mu_plus_lambda(mu=self.pop_size, lambda_=self.pop_size,
+                                                 statistics=stats, verbose=verbose)
 
-    # operator for selecting individuals for breeding the next generation
-    toolbox.register("select", tools.selNSGA2)
+        fronts = tools.emo.sortLogNondominated(result, len(result))
 
-    # Create the population
-    pop = toolbox.population(n=toolbox.pop_size)
-    pop = toolbox.select(pop, len(pop))
-
-    # Create the statistics
-    stats = tools.Statistics()
-    stats.register("pop", copy.deepcopy)
-
-    # Verbosity
-    verbose = True
-
-    # Run the simulation
-    res_pop, logbook = myEaMuPlusLambda(pop, toolbox, mu=toolbox.pop_size,
-                                        lambda_=toolbox.pop_size, cxpb=toolbox.cx_prob,
-                                        mutpb=toolbox.mut_prob, stats=stats,
-                                        ngen=toolbox.max_gen, verbose=verbose)
-
-    # Get the pareto fronts
-    fronts = tools.emo.sortLogNondominated(res_pop, len(res_pop))
-
-    # Print statistics
-    plt.plot_pareto_fronts(fronts, toolbox.evaluate)
-
-    # plt.plot_pareto_fronts_animated(logbook, toolbox.evaluate, tools.emo.sortLogNondominated)
-
-    input("cenas")
-
-if __name__ == "__main__":
-    main()
+        return fronts, logbook

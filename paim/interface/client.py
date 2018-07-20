@@ -6,7 +6,7 @@ import struct
 import json
 
 
-class Client(object):
+class Client:
     """A client that handles Cadence requests.
 
     This client receives data from Cadence (through a server) and processes that data.

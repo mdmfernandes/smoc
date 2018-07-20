@@ -1,28 +1,25 @@
-;; output file
+;; Output file
 out_path = getShellEnvVar("RESULT_FILE")
 outf = outfile(out_path "w")
 
-run()   ;; run sim
+;; Run simulation
+run()
 
-;; outputs
-; vdsat = v("M0.m1:vdsat" ?result "dcOp-dc")
+;; Get results
+POWER = -(VDC("/vdd") * IDC("/V1/PLUS"))
+GAIN = ymax(dB20(VF("/net3")))
+REG1 = pv("/M1" "region" ?result "dcOpInfo-info")
+REG2 = pv("/M2" "region" ?result "dcOpInfo-info")
+GBW = gainBwProd(VF("/net3"))
+OS = (((1.2 - pv("/M1" "vdsat" ?result "dcOpInfo-info")) + pv("/M2" "vdsat" ?result "dcOpInfo-info")) - 0.1)
 
-max_ac = ymax(db20(VF("/out")))
-gbw = gainBwProd(VF("/out"))
+;; Save results to file
+fprintf( outf "%s\t%e\n", "POWER", POWER)
+fprintf( outf "%s\t%g\n", "GAIN", GAIN)
+fprintf( outf "%s\t%d\n", "REG1", REG1)
+fprintf( outf "%s\t%d\n", "REG2", REG2)
+fprintf( outf "%s\t%g\n", "GBW", GBW)
+fprintf( outf "%s\t%g", "OS", OS)
 
-;results()
-;selectResults('dcOpInfo)
-;report(?output outf ?reportStyle "spice")
-
-;selectResults('tran)
-;ocnPrint(?output outf getData("out"))
-
-
-fprintf( outf "%s\t%f\n", "max_ac", max_ac)
-fprintf( outf "%s\t%f\n", "gbw", gbw)
-
-
-;;fprintf( outf "%s\t%f", vdsat.name, vdsat)
-
+;; Close file
 close(outf)
-

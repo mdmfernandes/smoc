@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Graphics plotting functions"""
 
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
 from matplotlib import animation
 
 import pandas as pd

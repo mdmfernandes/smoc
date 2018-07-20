@@ -27,7 +27,7 @@ def print_menu():
             selection = int(input("\n-> Please Select: "))
 
             # Check for valid input
-            if selection >= 0 and selection < len(menu):
+            if 0 <= selection < len(menu):
                 break
 
         except ValueError:  # if selection is NaN
