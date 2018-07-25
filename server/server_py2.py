@@ -2,7 +2,13 @@
 # -*- coding: utf-8 -*-
 
 # The first line is a shebang to execute the server from shell (./)
-"""Server that stands between the optimizer and cadence."""
+"""Server that stands between the optimizer and cadence.
+This file is modified to support python 2. The differences with
+"server.py" are:
+    - string formatting: "f'" is not allowed. Need to use ".format"
+    - Streams don't include the method "__close__". Need to use
+    a wrapper.
+"""
 
 import json
 import os
@@ -10,10 +16,26 @@ import socket
 import struct
 import sys
 import time
+from contextlib import contextmanager
 
 # Aqui não se pode usar relative path (.util) porque o server vai ser
 # executado como __main__, e o python não reconhece __main__ como package
-from util import get_vars_from_file, store_vars_in_file, get_results_from_file
+from util_py2 import (get_results_from_file, get_vars_from_file,
+                      store_vars_in_file)
+
+
+@contextmanager
+def closing(thing):
+    """Close stream when using the "width" since the __close__ method of
+    streams is not defined in python 2.
+
+    Arguments:
+        thing {stream} -- Stream (file, socket, ...)
+    """
+    try:
+        yield thing
+    finally:
+        thing.close()
 
 
 class Server(object):
@@ -61,7 +83,7 @@ class Server(object):
 
         try:
             # Start connection between the optimizer and the server (UNIX socket)
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
                 # define socket options to allow the reuse of the same addr
                 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 # Start to listen to the socket
@@ -71,13 +93,13 @@ class Server(object):
                 # Waits for client connection
                 self.conn, addr = s.accept()
 
-            with self.conn:
+            with closing(self.conn):
                 # Receive socket info from client
                 sockname = self.recv_data()['data']
 
                 if self.is_cadence:
                     self.send_skill(
-                        f"Connected to client with the address {sockname[0]}:{sockname[1]}")
+                        "Connected to client with the address {0}:{1}".format(sockname[0], sockname[1]))
 
                 else:
                     print("Connected to client with the address {0}:{1}".format(
@@ -126,7 +148,7 @@ class Server(object):
         except (OSError, AttributeError, IOError) as err:
             self.send_warn("Error: {0}".format(err))
         except:
-            self.send_warn(f"my Error: {sys.exc_info()}")
+            self.send_warn("my Error: {0}".format(sys.exc_info()))
 
         finally:
             self.close()    # Stop the server
@@ -259,7 +281,7 @@ class Server(object):
             msg {string} -- debug message
         """
         time.sleep(1)
-        self.send_warn(f"[Debug] {msg}")
+        self.send_warn("[Debug] {0}".format(msg))
 
     def process_skill_request(self, req):
         """Process a skill request from the optimizer.
@@ -277,7 +299,7 @@ class Server(object):
             typ = req['type']
             data = req['data']
         except KeyError as err:  # if the key does not exist
-            self.send_warn(f"Error: {err}")
+            self.send_warn("Error: {0}".format(err))
             return None
 
         if typ == 'info':
@@ -287,21 +309,23 @@ class Server(object):
                 return typ
         elif typ == 'loadSimulator':
             sim_path = os.environ.get('SCRIPT_PATH') + "/loadSimulator.ocn"
-            return f'loadSimulator( "{sim_path}" )'
+            return 'loadSimulator( "{0}" )'.format(sim_path)
 
         elif typ == 'updateAndRun':
             # Store circuit variables in file
-            vars_path = os.environ.get('VAR_PATH') + f"/vars{self.count}.ocn"
+            vars_path = os.environ.get(
+                'VAR_PATH') + "/vars{0}.ocn".format(self.count)
             store_vars_in_file(data, vars_path)
             # Redefine the path of the simulation results file
             # to be used by cadence
-            out_file = os.environ.get('RESULT_PATH') + f"/out{self.count}.txt"
+            out_file = os.environ.get(
+                'RESULT_PATH') + "/out{0}.txt".format(self.count)
 
             # create empty file
             with open(out_file, 'w'):
                 pass
 
-            return f'updateAndRun( "{vars_path}" "RESULT_FILE={out_file}" )'
+            return 'updateAndRun( "{0}" "RESULT_FILE={1}" )'.format(vars_path, out_file)
         else:
             self.send_warn("Invalid object type sent from the client.")
             return None
@@ -326,13 +350,14 @@ class Server(object):
             # TODO: Get simulation results
             #res_path = os.environ.get('RESULT_PATH') + f'/out{self.count}.txt'
             #res = get_results_from_file(res_path)
-            out_file = os.environ.get('RESULT_PATH') + f"/out{self.count}.txt"
+            out_file = os.environ.get(
+                'RESULT_PATH') + "/out{0}.txt".format(self.count)
 
             obj = get_results_from_file(out_file)
 
         else:
             typ = 'info'
-            obj = f"aa{msg}bb"
+            obj = "aa{0}bb".format(msg)
 
         return typ, obj
 

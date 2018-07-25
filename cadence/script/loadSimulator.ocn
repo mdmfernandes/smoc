@@ -3,20 +3,24 @@ setup(?numberNotation 'engineering)
 
 ;; Simulator
 simulator( 'spectre )
-design(	 "/home/tarzan/simulation/cs/spectre/schematic/netlist/netlist")
-resultsDir( "/home/tarzan/simulation/cs/spectre/schematic" )
+design(	 "/home/mdm.fernandes/IC6_workspace/simulation/COMMON_SOURCE/spectre/schematic/netlist/netlist")
+resultsDir( "/home/mdm.fernandes/IC6_workspace/simulation/COMMON_SOURCE/spectre/schematic" )
+
 
 ;; Model Files
 modelFile( 
-    '("/home/umc/130nm/cadence/CDB/umc13mmrf/../Models/Spectre/l130e-rf-v131-control.scs" "")
-    '("/home/umc/130nm/cadence/CDB/umc13mmrf/../Models/Spectre/L130E_MM_HS_MAIN_V151.lib.scs" "")
-    '("/home/umc/130nm/cadence/CDB/umc13mmrf/../Models/Spectre/L130E_MM_TRIPLEWELL_MAIN_V151.lib.scs" "")
-    '("/home/tarzan/Desktop/oppoint.scs" "")
+    '("/home/mdm.fernandes/IC6_workspace/nominal/spectre/nominalwrapper.scs" "")
+)
+definitionFile(
+    "models.scs"
 )
 
 ;; Set simulations
 analysis('ac ?start "10k"  ?stop "1G"  )
 analysis('dc ?saveOppoint t  )
+envOption(
+	'analysisOrder  list("dc" "ac") 
+)
 
 
 temp( 27 ) 

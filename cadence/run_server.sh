@@ -1,7 +1,10 @@
 #!/usr/bin/env sh
 
-export server_path="/home/tarzan/Projects/paim/server/server.py"
-export pyth="python3.6"
+# TODO: IF python -V == 2,
+#export server_path="/home/mdm.fernandes/Projects/paim/server/server_py2.py"
+
+export server_path="/home/mdm.fernandes/Projects/paim/server/server.py"
+export pyth="python"
 
 export cmd="${pyth} ${server_path}"
 

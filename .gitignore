@@ -102,3 +102,6 @@ ENV/
 
 # logs content
 logs/*
+
+# todo
+TODO_PROBLEMAS

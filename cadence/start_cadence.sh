@@ -3,7 +3,7 @@
 # Project name
 export PROJECT_NAME="commonSource-tutorial"
 # Project root directory
-WORK_SPACE="/home/tarzan/Projects"
+WORK_SPACE="/home/mdm.fernandes/Projects"
 
 #############################################
 #       Do not change the code below!       #
@@ -52,4 +52,4 @@ echo "**********************************************************************"
 echo "*                          Starting Cadence                          *"
 echo "**********************************************************************"
 # Code to run Cadence and the script cadence.il
-icfb -nograph -restore cadence.il
+virtuoso -nograph -restore cadence.il

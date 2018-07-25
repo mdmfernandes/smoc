@@ -98,7 +98,7 @@ procedure( errorHandler(cid errorMessage)
 ;; @param {number} exitStatus - Server exit status
 ;;
 procedure( exitHandler(cid exitStatus)
-	printf("Server has stopped with the exit code %d. I'm out!!!\n" exitStatus)  
+	printf("Server has stopped with the exit code %d. I'm out!!!\n" exitStatus)
     hiRegTimer("exit()", 10)    ; exit Cadence
 )
 
@@ -109,7 +109,7 @@ procedure( exitHandler(cid exitStatus)
 procedure( startServer()
 	printf("[INFO] Starting server process...\n")
     serverHasStarted = 0
-	cid = ipcBeginProcess("run_server.sh" "" 'requestHandler 'errorHandler 'exitHandler "")
+	cid = ipcBeginProcess("./run_server.sh" "" 'requestHandler 'errorHandler 'exitHandler "")
     msg = "Python server has started!\n"
     ipcWriteProcess(cid sprintf(nil "%d\n" strlen(msg)))
 	ipcWriteProcess(cid msg)

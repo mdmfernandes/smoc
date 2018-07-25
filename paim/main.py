@@ -67,9 +67,9 @@ def get_circuit_params_from_file():
 
     # Genes de um individuo - W1, W2 (=WB), L (=L1=L2=LB), Ib, Vbias(=VGS1)
     circuit_vars = {
-        'W1':    (1e-6,   100e-6),
-        'W2':    (3e-6,   100e-6),
-        'L':     (120e-9, 4*120e-9),
+        'W1':    (1,   100),
+        'W2':    (3,   100),
+        'L':     (140e-3, 4*140e-3),
         'IB':    (10e-6,  100e-6),
         'VBIAS': (0.3,    1.0)
     }
@@ -108,8 +108,8 @@ def main():
         print(f"Circuit Variables: {circuit_vars.keys()}")
 
         # Optimizer parameters (TODO: get from somewhere)
-        pop_size = 2
-        max_gen = 1
+        pop_size = 10
+        max_gen = 5
 
         # Load the optimizer
         paim = OptimizerNSGA2(objectives, constraints, circuit_vars, pop_size,
@@ -122,6 +122,11 @@ def main():
         with open(f"../logs/logbook{current_time}.pickle", 'wb') as f:
         # Iterate over the dictionary and save to file
             pickle.dump(logbook, f)
+
+        # Save fronts (pop of the last run) pickled to file
+        with open(f"../logs/fronts{current_time}.pickle", 'wb') as f:
+        # Iterate over the dictionary and save to file
+            pickle.dump(fronts, f)
 
         # Read do logbook só para confirmar
         # with open(f"../logs/logbook{current_time}.pickle", 'rb') as f:

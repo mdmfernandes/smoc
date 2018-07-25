@@ -3,12 +3,14 @@
 
 import array
 import copy
-import math
 import random
-from multiprocessing import Pool
+import time
 
 from deap import algorithms, base, creator, tools
 from profilehooks import timecall
+
+#from multiprocessing import Pool
+
 
 # A class é só para ter tudo mais organizado...
 
@@ -141,16 +143,6 @@ class OptimizerNSGA2:
     #     return penalty
 
     # https://groups.google.com/forum/#!topic/deap-users/SSd_zZ4XinI
-
-    def teste(ola={"oi": 1, "coiso": 2}):
-        """[summary]
-
-        Keyword Arguments:
-            ola {dict} -- [description] (default: {{"oi":1, "coiso":2}})
-        """
-
-        pass
-
     def eval_circuit(self, individual):
         """[summary]
 
@@ -195,7 +187,6 @@ class OptimizerNSGA2:
             fitnesses = [1000, -1000]
             return tuple(fitnesses)
 
-        print("Simulation Sucessfull")
         fitnesses = []
 
         # Get the fitnesses
@@ -213,22 +204,20 @@ class OptimizerNSGA2:
         
         if self.constraints:
             # Handling the contraints
-            pass  # penalty = self.handle_constraints(sim_res)
-        else:
             # Just a test... se não estiverem na saturação
             if sim_res["REG1"] != 2 or sim_res["REG2"] != 2:
-                print("penalty...")
                 penalty = 0.1
-            else:
-                penalty = 1
 
         # Multiply the fitness by the penalty
         #fitnesses = [fit * penalty for fit in fitnesses]
+        #TODO: Talvez verificar se o penalty for para minimizar ou maximizar
+        # e atribuir o penalty de acordo
         fitnesses = [(1/penalty) * fitnesses[0], penalty * fitnesses[1]]
             
-        #print(f"FITNESS: {fitnesses}")
-        #print(f"VARS: {individual}")
-        #print(f"RESULTS: {sim_res}")
+        print(f"FITNESS: {fitnesses}")
+        print(f"VARS: {individual}")
+        print(f"RESULTS: {sim_res}")
+        print("==================================================")
 
         return tuple(fitnesses)
 
@@ -261,7 +250,6 @@ class OptimizerNSGA2:
         registered in the toolbox. This algorithm uses the :func:`varOr`
         variation.
         """
-
         # Create the population
         population = self.toolbox.population(n=self.pop_size)
         population = self.toolbox.select(population, len(population))
@@ -292,6 +280,9 @@ class OptimizerNSGA2:
 
         # Begin the generational process
         for gen in range(1, self.max_gen + 1):
+            # Get current time
+            start_time = time.time()
+
             # Vary the population
             offspring = algorithms.varOr(population, self.toolbox, lambda_,
                                          self.cx_prob, self.mut_prob)
@@ -314,7 +305,8 @@ class OptimizerNSGA2:
             logbook.record(gen=gen, nevals=len(invalid_ind), **record)
             if verbose:   # Only prints multiples of 5 gens (and not gen % 5)
                 # print(logbook.stream)
-                print(f"---- Gen: {gen} \t| # Evals: {len(invalid_ind)} -----")
+                gen_time = time.time() - start_time
+                print(f"-------- Gen: {gen}   |   # Evals: {len(invalid_ind)}   |   Time: {gen_time:.2f}s --------")
 
         return population, logbook
 
