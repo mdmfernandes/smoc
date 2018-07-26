@@ -95,6 +95,8 @@ def main():
 
     objectives, constraints, circuit_vars = get_circuit_params_from_file()
 
+    fronts = None
+
     try:
         print("[INFO] Loading simulator...")
         res_vars = load_simulator(client)
@@ -105,15 +107,16 @@ def main():
             raise Exception(
                 "The circuit variables don't mach with the variables provided in the file")
 
-        print(f"Circuit Variables: {circuit_vars.keys()}")
+        print(f"Circuit Variables: {list(circuit_vars.keys())}")
 
         # Optimizer parameters (TODO: get from somewhere)
-        pop_size = 10
-        max_gen = 5
+        pop_size = 16
+        max_gen = 3
+        sim_multi = 8   # Number of parallel simulations
 
         # Load the optimizer
         paim = OptimizerNSGA2(objectives, constraints, circuit_vars, pop_size,
-                              max_gen, client=client)
+                              max_gen, sim_multi, client=client)
 
         fronts, logbook = paim.run_ga(stats=True, verbose=True)
 
@@ -135,18 +138,19 @@ def main():
         # print(oi)
 
         # Print statistics
-        plt.plot_pareto_fronts(fronts, paim.toolbox.evaluate)
+        plt.plot_pareto_fronts(fronts, paim.toolbox.evaluate, sim_multi)
 
         # plt.plot_pareto_fronts_animated(logbook, toolbox.evaluate, tools.emo.sortLogNondominated)
 
-        input("Press any key to close the program...")
+        input("\n\nPress any key to close the program...")
         
-        print("Shutting down.")
+        print("\nShutting down.")
         req = dict(type='info', data='exit')
         client.send_data(req)
 
     except:
         print(f"my Error: {sys.exc_info()}")
+        print(fronts)
         raise
 
     client.close()  # Close the socket

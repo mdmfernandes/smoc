@@ -10,9 +10,24 @@ import seaborn
 seaborn.set(style='whitegrid')
 #seaborn.set_context('notebook')
 
-def plot_fronts(fronts, evaluate, ax, plot_colors):
+def plot_fronts(fronts, evaluate, sim_multi, ax, plot_colors):
+    
     for i, inds in enumerate(fronts):
-        par = [evaluate(ind) for ind in inds]
+        # Determine the number of simulation calls to the server
+        if not len(inds) % sim_multi:
+            n_sim = int(len(inds) / sim_multi)
+        else:
+            n_sim = int(len(inds) / sim_multi) + 1
+
+        inds_multi = []
+
+        # Split the individuals in groups of sim_multi
+        for idx in range(n_sim):
+            inds_multi.append(
+                inds[(sim_multi*idx):(sim_multi*(1+idx))])
+
+        # Fitnesses are the concatenation (sum) of all the fitnesses returned by "eval_circuit"
+        par = sum(map(evaluate, inds_multi), [])
 
         df = pd.DataFrame(par)
 
@@ -22,7 +37,7 @@ def plot_fronts(fronts, evaluate, ax, plot_colors):
                 x=df.columns[0], y=df.columns[1], color=plot_colors[i % len(plot_colors)])
         
 
-def plot_pareto_fronts(fronts, evaluate):
+def plot_pareto_fronts(fronts, evaluate, sim_multi):
     """Plot the pareto fronts
 
     Arguments:
@@ -33,7 +48,7 @@ def plot_pareto_fronts(fronts, evaluate):
     #plt.show()
     fig, ax = plt.subplots(1, figsize=(8, 8))
 
-    plot_fronts(fronts, evaluate, ax, plot_colors)
+    plot_fronts(fronts, evaluate, sim_multi, ax, plot_colors)
 
     plt.xlabel('power (uW)')
     plt.ylabel('gain (dB)')

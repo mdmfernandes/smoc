@@ -332,7 +332,7 @@ class Server(object):
 
         else:
             typ = 'info'
-            obj = f"aa{msg}bb"
+            obj = f"[INFO from Cadence] {msg}"
 
         return typ, obj
 

@@ -42,7 +42,7 @@ class OptimizerNSGA2:
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self, objectives, constraints, circuit_vars, pop_size,
-                 max_gen, client=None, mut_prob=0.1, cx_prob=0.8,
+                 max_gen, sim_multi, client=None, mut_prob=0.1, cx_prob=0.8,
                  mut_eta=20, cx_eta=20):
         """Create the Optimizer"""
 
@@ -54,6 +54,7 @@ class OptimizerNSGA2:
         self.circuit_vars = list(circuit_vars.keys())
         self.pop_size = pop_size
         self.max_gen = max_gen
+        self.sim_multi = sim_multi
 
         if client is not None:
             self.client = client
@@ -143,7 +144,7 @@ class OptimizerNSGA2:
     #     return penalty
 
     # https://groups.google.com/forum/#!topic/deap-users/SSd_zZ4XinI
-    def eval_circuit(self, individual):
+    def eval_circuit(self, individuals):
         """[summary]
 
         Arguments:
@@ -161,12 +162,12 @@ class OptimizerNSGA2:
             [type] -- [description]
         """
 
-        # Run simulation (j)
+       # A list with the variables of all individuals stored in dictionaries
+        variables = []
 
-        variables = {}
-
-        for idx, key in enumerate(self.circuit_vars):
-            variables[key] = individual[idx]
+        for ind in individuals:
+            variables.append(
+                {key: ind[idx] for (idx, key) in enumerate(self.circuit_vars)})
 
         req = dict(type='updateAndRun', data=variables)
         self.client.send_data(req)
@@ -183,43 +184,49 @@ class OptimizerNSGA2:
             print(f"Error: {err}")
 
         if res_type != 'updateAndRun':
-            print("Simulation error!!!")
-            fitnesses = [1000, -1000]
-            return tuple(fitnesses)
+            raise Exception(
+                "[ERROR] Simulation error!!! Check variables defaults, etc.")
 
         fitnesses = []
 
-        # Get the fitnesses
-        for obj in self.objectives.keys():
-            try:
-                fitnesses.append(sim_res[obj])
-            except KeyError as err:
-                raise Exception(
-                    f"Eval circuit: there's no key {err} in the simulation results.")
+        # Get the fitnesses for all individuals
+        for idx in range(len(individuals)):
+            fitness = []    # Fitnesses of one individual
 
-        
-        # For now the penalty is applied with the same weight to all the objectives, but we
-        # can change this later for better performance
-        penalty = 1
-        
-        if self.constraints:
-            # Handling the contraints
-            # Just a test... se não estiverem na saturação
-            if sim_res["REG1"] != 2 or sim_res["REG2"] != 2:
-                penalty = 0.1
+            sim_res_ind = sim_res[idx]  # Simulation results of one individual
 
-        # Multiply the fitness by the penalty
-        #fitnesses = [fit * penalty for fit in fitnesses]
-        #TODO: Talvez verificar se o penalty for para minimizar ou maximizar
-        # e atribuir o penalty de acordo
-        fitnesses = [(1/penalty) * fitnesses[0], penalty * fitnesses[1]]
+            for obj in self.objectives.keys():
+                try:
+                    fitness.append(sim_res_ind[obj])
+                except KeyError as err:
+                    raise Exception(
+                        f"Eval circuit: there's no key {err} in the simulation results.")
+
+            # For now the penalty is applied with the same weight to all the objectives, but we
+            # can change this later for better performance
+            penalty = 1
+
+            if self.constraints:
+                # Handling the contraints
+                # TODO: Just a test... se não estiverem na saturação
+                if sim_res_ind["REG1"] != 2 or sim_res_ind["REG2"] != 2:
+                    penalty = 0.01
+
+            # Multiply the fitness by the penalty
+            #fitnesses = [fit * penalty for fit in fitnesses]
+            # TODO: Talvez verificar se o penalty for para minimizar ou maximizar
+            # e atribuir o penalty de acordo
+            fitness = [(1/penalty) * fitness[0], penalty * fitness[1]]
+
+            fitnesses.append(tuple(fitness))
+
             
-        print(f"FITNESS: {fitnesses}")
-        print(f"VARS: {individual}")
-        print(f"RESULTS: {sim_res}")
-        print("==================================================")
+            print(f"FITNESS: {fitness}")
+            print(f"VARS: {individuals[idx]}")
+            print(f"RESULTS: {sim_res_ind}")
+            print("==================================================")
 
-        return tuple(fitnesses)
+        return fitnesses
 
     ##################################################################
     ##################################################################
@@ -264,19 +271,40 @@ class OptimizerNSGA2:
         logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
 
         # Evaluate the individuals with an invalid fitness
-        invalid_ind = [ind for ind in population if not ind.fitness.valid]
-        fitnesses = self.toolbox.map(self.toolbox.evaluate, invalid_ind)
-        for ind, fit in zip(invalid_ind, fitnesses):
+        invalid_inds = [ind for ind in population if not ind.fitness.valid]
+
+        # Determine the number of simulation calls to the server
+        if not len(invalid_inds) % self.sim_multi:
+            n_sim = int(len(invalid_inds) / self.sim_multi)
+        else:
+            n_sim = int(len(invalid_inds) / self.sim_multi) + 1
+
+        invalid_inds_multi = []
+
+        # Split the individuals in groups of sim_multi
+        for idx in range(n_sim):
+            invalid_inds_multi.append(
+                invalid_inds[(self.sim_multi*idx):(self.sim_multi*(1+idx))])
+
+        print("\n==================== Evaluating all Population ====================\n")
+        print("The first simulation is so boooring...")
+
+        # Fitnesses are the concatenation (sum) of all the fitnesses returned by "eval_circuit"
+        fitnesses = sum(map(self.toolbox.evaluate, invalid_inds_multi), [])
+
+        for ind, fit in zip(invalid_inds, fitnesses):
             ind.fitness.values = fit
 
         if halloffame is not None:
             halloffame.update(population)
 
         record = stats.compile(population) if stats is not None else {}
-        logbook.record(gen=0, nevals=len(invalid_ind), **record)
+        logbook.record(gen=0, nevals=len(invalid_inds), **record)
 
         # if verbose:
         #    print logbook.stream
+
+        print("\n====================== Starting Optimization ======================\n")
 
         # Begin the generational process
         for gen in range(1, self.max_gen + 1):
@@ -288,9 +316,25 @@ class OptimizerNSGA2:
                                          self.cx_prob, self.mut_prob)
 
             # Evaluate the individuals with an invalid fitness
-            invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-            fitnesses = self.toolbox.map(self.toolbox.evaluate, invalid_ind)
-            for ind, fit in zip(invalid_ind, fitnesses):
+            invalid_inds = [ind for ind in offspring if not ind.fitness.valid]
+
+            # Determine the number of simulation calls to the server
+            if not len(invalid_inds) % self.sim_multi:
+                n_sim = int(len(invalid_inds) / self.sim_multi)
+            else:
+                n_sim = int(len(invalid_inds) / self.sim_multi) + 1
+
+            invalid_inds_multi = []
+
+            # Split the individuals in groups of sim_multi
+            for idx in range(n_sim):
+                invalid_inds_multi.append(
+                    invalid_inds[(self.sim_multi*idx):(self.sim_multi*(1+idx))])
+
+            # Fitnesses are the concatenation (sum) of all the fitnesses returned by "eval_circuit"
+            fitnesses = sum(map(self.toolbox.evaluate, invalid_inds_multi), [])
+
+            for ind, fit in zip(invalid_inds, fitnesses):
                 ind.fitness.values = fit
 
             # Update the hall of fame with the generated individuals
@@ -302,11 +346,14 @@ class OptimizerNSGA2:
 
             # Update the statistics with the new population
             record = stats.compile(population) if stats is not None else {}
-            logbook.record(gen=gen, nevals=len(invalid_ind), **record)
+            logbook.record(gen=gen, nevals=len(invalid_inds), **record)
             if verbose:   # Only prints multiples of 5 gens (and not gen % 5)
                 # print(logbook.stream)
                 gen_time = time.time() - start_time
-                print(f"-------- Gen: {gen}   |   # Evals: {len(invalid_ind)}   |   Time: {gen_time:.2f}s --------")
+                print(
+                    f"-------- Gen: {gen}   |   # Evals: {len(invalid_inds)}   |   Time: {gen_time:.2f}s --------")
+
+        print("\n====================== Optimization Finished ======================\n")
 
         return population, logbook
 

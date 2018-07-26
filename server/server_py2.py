@@ -53,8 +53,8 @@ class Server(object):
         debug {boolean} -- if true send debug messages to cadence (default: {False})
     """
 
-    HOST = 'localhost'
-    PORT = 3000
+    HOST = os.environ.get('CLIENT_ADDR')
+    PORT = int(os.environ.get('CLIENT_PORT'))
 
     def __init__(self, cad_file, is_cadence=True):
         """Create a new Server instance."""
@@ -357,7 +357,7 @@ class Server(object):
 
         else:
             typ = 'info'
-            obj = "aa{0}bb".format(msg)
+            obj = "[INFO from Cadence] {0}".format(msg)
 
         return typ, obj
 

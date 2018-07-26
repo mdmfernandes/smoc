@@ -1,12 +1,15 @@
 #!/usr/bin/env sh
 
-# TODO: IF python -V == 2,
-#export server_path="/home/mdm.fernandes/Projects/paim/server/server_py2.py"
+pyth="python"
 
-export server_path="/home/mdm.fernandes/Projects/paim/server/server.py"
-export pyth="python"
+if echo "$("$pyth" -V 2>&1)" | grep -q "2."
+then # If python is on version 2
+    server_path="/home/mdm.fernandes/Projects/paim/server/server_py2.py"
+else
+    server_path="/home/mdm.fernandes/Projects/paim/server/server.py"
+fi
 
-export cmd="${pyth} ${server_path}"
+cmd="${pyth} ${server_path}"
 
 # replace the shell with a given program (executing it, not as new process)
 exec $cmd

@@ -1,4 +1,10 @@
 @ Faraday 65nm
 ind: 100
 gen: 30
-time: 5117.354s
+time: 5117.354s ~ 1h26m
+
+@ Faraday 65nm
+ind: 100
+gen: 30
+sim_multi: 10
+time: 4273.829s ~ 1h11m

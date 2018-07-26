@@ -99,6 +99,7 @@ procedure( errorHandler(cid errorMessage)
 ;;
 procedure( exitHandler(cid exitStatus)
 	printf("Server has stopped with the exit code %d. I'm out!!!\n" exitStatus)
+    ocnxlEndXLMode()            ; End XL mode
     hiRegTimer("exit()", 10)    ; exit Cadence
 )
 

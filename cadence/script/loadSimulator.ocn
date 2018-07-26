@@ -1,26 +1,141 @@
-;; Number notation
 setup(?numberNotation 'engineering)
+ddCreateLib("OPTIMIZER_TEST" "/home/mdm.fernandes/Projects/optimizer/OPTIMIZER_TEST")
 
-;; Simulator
+;====================== Set to XL mode =========================================
+ocnSetXLMode()
+ocnxlProjectDir( "/home/mdm.fernandes/IC6_workspace/simulation" )
+ocnxlTargetCellView( "OPTIMIZER_TEST" "COMMON_SOURCE" "adexl" )
+ocnxlResultsLocation( "" )
+ocnxlSimResultsLocation( "" )
+ocnxlMaxJobFail( 20 )
+
+;====================== Tests setup ============================================
+;---------- Test 1 ------------- 
+ocnxlBeginTest("test:1")
 simulator( 'spectre )
 design(	 "/home/mdm.fernandes/IC6_workspace/simulation/COMMON_SOURCE/spectre/schematic/netlist/netlist")
-resultsDir( "/home/mdm.fernandes/IC6_workspace/simulation/COMMON_SOURCE/spectre/schematic" )
-
-
-;; Model Files
 modelFile( 
     '("/home/mdm.fernandes/IC6_workspace/nominal/spectre/nominalwrapper.scs" "")
 )
 definitionFile(
     "models.scs"
 )
-
-;; Set simulations
 analysis('ac ?start "10k"  ?stop "1G"  )
 analysis('dc ?saveOppoint t  )
+desVar(	  "IB" 100u	)
+desVar(	  "L" 0.28	)
+desVar(	  "VBIAS" 500m	)
+desVar(	  "W1" 2	)
+desVar(	  "W2" 6	)
 envOption(
 	'analysisOrder  list("dc" "ac") 
 )
-
-
 temp( 27 ) 
+ocnxlOutputExpr( "ymax(mag(v(\"/out\" ?result \"ac\")))" ?name "GAIN" ?plot t)
+ocnxlOutputExpr( "pv(\"M2.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG2" ?plot t)
+ocnxlOutputExpr( "pv(\"M1.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG1" ?plot t)
+ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\")))" ?name "GBW" ?plot t)
+ocnxlOutputExpr( "(- pv(\"V0\" \"pwr\" ?result \"dcOpInfo\"))" ?name "POWER" ?plot t)
+ocnxlEndTest() ; "test:1"
+
+;---------- Test 2 ------------- 
+ocnxlBeginTest("test:2")
+simulator( 'spectre )
+design(	 "/home/mdm.fernandes/IC6_workspace/simulation/COMMON_SOURCE/spectre/schematic/netlist/netlist")
+modelFile( 
+    '("/home/mdm.fernandes/IC6_workspace/nominal/spectre/nominalwrapper.scs" "")
+)
+definitionFile(
+    "models.scs"
+)
+analysis('ac ?start "10k"  ?stop "1G"  )
+analysis('dc ?saveOppoint t  )
+desVar(	  "IB" 50u	)
+desVar(	  "L" 0.28	)
+desVar(	  "VBIAS" 600m	)
+desVar(	  "W1" 4	)
+desVar(	  "W2" 12	)
+envOption(
+	'analysisOrder  list("dc" "ac") 
+)
+temp( 27 ) 
+ocnxlOutputExpr( "ymax(mag(v(\"/out\" ?result \"ac\")))" ?name "GAIN" ?plot t)
+ocnxlOutputExpr( "pv(\"M2.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG2" ?plot t)
+ocnxlOutputExpr( "pv(\"M1.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG1" ?plot t)
+ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\")))" ?name "GBW" ?plot t)
+ocnxlOutputExpr( "(- pv(\"V0\" \"pwr\" ?result \"dcOpInfo\"))" ?name "POWER" ?plot t)
+ocnxlEndTest() ; "test:2"
+
+;---------- Test 3 ------------- 
+ocnxlBeginTest("test:3")
+simulator( 'spectre )
+design(	 "/home/mdm.fernandes/IC6_workspace/simulation/COMMON_SOURCE/spectre/schematic/netlist/netlist")
+modelFile( 
+    '("/home/mdm.fernandes/IC6_workspace/nominal/spectre/nominalwrapper.scs" "")
+)
+definitionFile(
+    "models.scs"
+)
+analysis('ac ?start "10k"  ?stop "1G"  )
+analysis('dc ?saveOppoint t  )
+desVar(	  "IB" 200u	)
+desVar(	  "L" 0.28	)
+desVar(	  "VBIAS" 500m	)
+desVar(	  "W1" 1	)
+desVar(	  "W2" 3	)
+envOption(
+	'analysisOrder  list("dc" "ac") 
+)
+temp( 27 ) 
+ocnxlOutputExpr( "ymax(mag(v(\"/out\" ?result \"ac\")))" ?name "GAIN" ?plot t)
+ocnxlOutputExpr( "pv(\"M2.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG2" ?plot t)
+ocnxlOutputExpr( "pv(\"M1.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG1" ?plot t)
+ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\")))" ?name "GBW" ?plot t)
+ocnxlOutputExpr( "(- pv(\"V0\" \"pwr\" ?result \"dcOpInfo\"))" ?name "POWER" ?plot t)
+ocnxlEndTest() ; "test:3"
+
+;---------- Test 4 ------------- 
+ocnxlBeginTest("test:4")
+simulator( 'spectre )
+design(	 "/home/mdm.fernandes/IC6_workspace/simulation/COMMON_SOURCE/spectre/schematic/netlist/netlist")
+modelFile( 
+    '("/home/mdm.fernandes/IC6_workspace/nominal/spectre/nominalwrapper.scs" "")
+)
+definitionFile(
+    "models.scs"
+)
+analysis('ac ?start "10k"  ?stop "1G"  )
+analysis('dc ?saveOppoint t  )
+desVar(	  "IB" 50u	)
+desVar(	  "L" 0.28	)
+desVar(	  "VBIAS" 600m	)
+desVar(	  "W1" 6	)
+desVar(	  "W2" 18	)
+envOption(
+	'analysisOrder  list("dc" "ac") 
+)
+temp( 27 ) 
+ocnxlOutputExpr( "ymax(mag(v(\"/out\" ?result \"ac\")))" ?name "GAIN" ?plot t)
+ocnxlOutputExpr( "pv(\"M2.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG2" ?plot t)
+ocnxlOutputExpr( "pv(\"M1.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG1" ?plot t)
+ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\")))" ?name "GBW" ?plot t)
+ocnxlOutputExpr( "(- pv(\"V0\" \"pwr\" ?result \"dcOpInfo\"))" ?name "POWER" ?plot t)
+ocnxlEndTest() ; "test:4"
+
+;====================== Job setup ==============================================
+ocnxlJobSetup( '(
+	"blockemail" "1"
+	"configuretimeout" "300"
+	"distributionmethod" "Local"
+	"lingertimeout" "300"
+	"maxjobs" "10"
+	"name" "ADE XL Default"
+	"preemptivestart" "1"
+	"reconfigureimmediately" "1"
+	"runtimeout" "-1"
+	"showerrorwhenretrying" "0"
+	"showoutputlogerror" "0"
+	"startmaxjobsimmed" "1"
+	"starttimeout" "300"
+	"usesameprocess" "1"
+) )

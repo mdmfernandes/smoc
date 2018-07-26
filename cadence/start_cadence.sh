@@ -5,6 +5,12 @@ export PROJECT_NAME="commonSource-tutorial"
 # Project root directory
 WORK_SPACE="/home/mdm.fernandes/Projects"
 
+## Server info
+# Client Address
+export CLIENT_ADDR="localhost"
+# Client Port
+export CLIENT_PORT="3000"
+
 #############################################
 #       Do not change the code below!       #
 #############################################

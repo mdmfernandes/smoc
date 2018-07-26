@@ -1,39 +1,29 @@
-;; Output file
+;====================== Open output file =======================================
 out_path = getShellEnvVar("RESULT_FILE")
 outf = outfile(out_path "w")
 
-;; Run simulation
-run()
+;====================== Run simulation =========================================
+ocnxlRun( ?mode 'sweepsAndCorners ?nominalCornerEnabled t ?allCornersEnabled nil ?allSweepsEnabled nil)
+; ?verboseMode nil
 
-;; Get results
-POWER = (- pv("V0" "pwr" ?result "dcOpInfo"))
-GAIN = ymax(mag(v("/out" ?result "ac")))
-REG2 = pv("M2.m1" "region" ?result "dcOpInfo")
-REG1 = pv("M1.m1" "region" ?result "dcOpInfo")
-GBW = gainBwProd(mag(v("/out" ?result "ac")))
-POWER = (- pv("V0" "pwr" ?result "dcOpInfo"))
-OS = 0.9
+;====================== Print to file ==========================================
+for( i 1 4   
+    sprintf(name "test:%d" i)
 
-;; Print to screen (debug)
-;printf( "%s\t%e\n", "POWER", POWER)
-;printf( "%s\t%g\n", "GAIN", GAIN)
-;printf( "%s\t%d\n", "REG1", REG1)
-;printf( "%s\t%d\n", "REG2", REG2)
-;if( GBW == nil then
-;	printf("NILLLLLLLLLLL\n")           
-;else
-;	printf( "%s\t%g\n", "GBW", GBW)
-;)
-;printf( "%s\t%g", "OS", OS)
+	POWER = calcVal("POWER" name)
+    GAIN = calcVal("GAIN" name)
+    REG1 = calcVal("REG1" name)
+    REG2 = calcVal("REG2" name)
+    GBW = calcVal("GBW" name ?defaultVal 24.2424)
+    OS = 0.9
 
+    fprintf( outf "%s\t%e\n", "POWER", POWER)
+    fprintf( outf "%s\t%g\n", "GAIN", GAIN)
+    fprintf( outf "%s\t%d\n", "REG1", REG1)
+    fprintf( outf "%s\t%d\n", "REG2", REG2)
+    fprintf( outf "%s\t%g\n", "GBW", GBW)
+    fprintf( outf "%s\t%g\n", "OS", OS)	
+)
 
-;; Save results to file
-fprintf( outf "%s\t%e\n", "POWER", POWER)
-fprintf( outf "%s\t%g\n", "GAIN", GAIN)
-fprintf( outf "%s\t%d\n", "REG1", REG1)
-fprintf( outf "%s\t%d\n", "REG2", REG2)
-fprintf( outf "%s\t%g\n", "GBW", GBW)
-fprintf( outf "%s\t%g", "OS", OS)
-
-;; Close file
+;====================== Close file =============================================
 close(outf)
