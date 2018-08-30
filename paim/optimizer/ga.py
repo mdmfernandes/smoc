@@ -3,18 +3,17 @@
 
 import array
 import copy
+import math
+import pickle
 import random
-import time
+import textwrap
 
 from deap import algorithms, base, creator, tools
 from profilehooks import timecall
-
-#from multiprocessing import Pool
-
-
-# A class é só para ter tudo mais organizado...
+from tqdm import tqdm
 
 
+# Organize everything in the class
 class OptimizerNSGA2:
     """A simulation-based circuit optimizer based on the NSGA2 algorithm
 
@@ -24,6 +23,8 @@ class OptimizerNSGA2:
     objectives and constraints, and the circuit variables.
     After finishing the optimization, it returns the optimal pareto front
     and the logbook.
+
+    DEAP source: https://deap.readthedocs.io/en/master/
 
     Arguments:
         objectives {dict} -- Optimization objectives (fitness)
@@ -38,13 +39,18 @@ class OptimizerNSGA2:
         cx_prob {float} -- Probability of crossover (default: 0.8)
         mut_eta {int} -- Crowding degree of the mutation (default: 20)
         cx_eta {int} -- Crowding degree of the crossover (default: 20)
+        debug {bool} -- Debug(default: False)
     """
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self, objectives, constraints, circuit_vars, pop_size,
                  max_gen, sim_multi, client=None, mut_prob=0.1, cx_prob=0.8,
-                 mut_eta=20, cx_eta=20):
+                 mut_eta=20, cx_eta=20, debug=False):
         """Create the Optimizer"""
+
+        # If debugging we should have a fixed seed to have coherent results
+        if debug:
+            random.seed(16384)
 
         # INFO: The sum of mut_prob and cx_prob shall be in [0, 1]
         self.mut_prob = mut_prob
@@ -62,7 +68,7 @@ class OptimizerNSGA2:
         # Set bounds
         bound_low = []
         bound_up = []
-
+        # Get the bounds from the circuit_vars
         for val in circuit_vars.values():
             bound_low.append(val[0])
             bound_up.append(val[1])
@@ -115,8 +121,8 @@ class OptimizerNSGA2:
         are a list, it generates a list.
 
         Arguments:
-            low {list} -- lower bounds
-            up {list} -- upper bounds
+            low {list} -- Lower bounds
+            up {list} -- Upper bounds
 
         Returns:
             {list} -- Generated numbers
@@ -127,12 +133,6 @@ class OptimizerNSGA2:
     ##################################################################
     ##################################################################
     ##################################################################
-
-    # def run_simulation(self, client, individual):
-
-    #     # res = ...
-    #     res = 1
-    #     return res
 
     # def handle_constraints(self, sim_res):
 
@@ -145,36 +145,26 @@ class OptimizerNSGA2:
 
     # https://groups.google.com/forum/#!topic/deap-users/SSd_zZ4XinI
     def eval_circuit(self, individuals):
-        """[summary]
-
+        """Evaluate the individuals and return their fitness
+        
         Arguments:
-            individual {[type]} -- [description]
-            client {[type]} -- [description]
-            objectives {[type]} -- [description]
-
-        Keyword Arguments:
-            constraints {[type]} -- [description] (default: {None})
-
-        Raises:
-            Exception -- [description]
-
-        Returns:
-            [type] -- [description]
+            individuals {list} -- List of individuals to evaluate
         """
+        # TODO: UPDATE DO DOCSTRING
 
        # A list with the variables of all individuals stored in dictionaries
         variables = []
 
+        # Map the individual variables values to a dictionary with the
+        # respective variable value and name
         for ind in individuals:
             variables.append(
-                {key: ind[idx] for (idx, key) in enumerate(self.circuit_vars)})
+                {key: ind[idx] for idx, key in enumerate(self.circuit_vars)})
 
+        # Send the request to the server
         req = dict(type='updateAndRun', data=variables)
         self.client.send_data(req)
-
-        #
         # Wait for data from server
-        #
         res = self.client.recv_data()
 
         try:
@@ -220,22 +210,16 @@ class OptimizerNSGA2:
 
             fitnesses.append(tuple(fitness))
 
-            
-            print(f"FITNESS: {fitness}")
-            print(f"VARS: {individuals[idx]}")
-            print(f"RESULTS: {sim_res_ind}")
-            print("==================================================")
+            #print(f"FITNESS: {fitness}")
+            #print(f"VARS: {individuals[idx]}")
+            #print(f"RESULTS: {sim_res_ind}")
+            # print("==================================================")
 
         return fitnesses
 
-    ##################################################################
-    ##################################################################
-    ##################################################################
-    ##################################################################
-
     @timecall
-    def ga_mu_plus_lambda(self, mu, lambda_, statistics,
-                          halloffame=None, verbose=__debug__):
+    def ga_mu_plus_lambda(self, mu, lambda_, checkpoint_fname, checkpoint_freq,
+                          checkpoint, verbose, sel_best):
         """This is the (mu + lambda) evolutionary algorithm.
         ADAPTED FROM: https://github.com/DEAP/deap/blob/master/deap/algorithms.py
 
@@ -257,72 +241,42 @@ class OptimizerNSGA2:
         registered in the toolbox. This algorithm uses the :func:`varOr`
         variation.
         """
-        # Create the population
-        population = self.toolbox.population(n=self.pop_size)
-        population = self.toolbox.select(population, len(population))
+        # TODO: FAZER DOCSTRING EM CONDIÇÕES
 
         # Create the statistics
-        if statistics:
-            stats = tools.Statistics()
-            stats.register("pop", copy.deepcopy)
+        stats_pop = tools.Statistics()
+        stats_fit = tools.Statistics(key=lambda ind: ind.fitness.values)
+        stats = tools.MultiStatistics(population=stats_pop, fitness=stats_fit)
+        stats.register("value", copy.deepcopy)
 
-        # Create the logbook
-        logbook = tools.Logbook()
-        logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
+        # If a checkpoint is provided, continue the given generation
+        if checkpoint:
+            with open(checkpoint, 'rb') as f:   # Load the checkpoint file
+                cp = pickle.load(f)
+            # Load the stored parameters
+            population = cp["population"]
+            start_gen = cp["generation"] + 1
+            logbook = cp["logbook"]
+            random.setstate(cp["rnd_state"])
+            print(textwrap.dedent(f"""
+                ======== Running from a checkpoint ========
+                -- Population size: {len(population)}
+                -- Current generation: {start_gen}"""))
 
-        # Evaluate the individuals with an invalid fitness
-        invalid_inds = [ind for ind in population if not ind.fitness.valid]
-
-        # Determine the number of simulation calls to the server
-        if not len(invalid_inds) % self.sim_multi:
-            n_sim = int(len(invalid_inds) / self.sim_multi)
         else:
-            n_sim = int(len(invalid_inds) / self.sim_multi) + 1
+            # Create the population
+            population = self.toolbox.population(n=self.pop_size)
+            start_gen = 1
 
-        invalid_inds_multi = []
+            # Create the logbook
+            logbook = tools.Logbook()
+            logbook.header = 'gen', 'evals', 'population', 'fitness'
 
-        # Split the individuals in groups of sim_multi
-        for idx in range(n_sim):
-            invalid_inds_multi.append(
-                invalid_inds[(self.sim_multi*idx):(self.sim_multi*(1+idx))])
-
-        print("\n==================== Evaluating all Population ====================\n")
-        print("The first simulation is so boooring...")
-
-        # Fitnesses are the concatenation (sum) of all the fitnesses returned by "eval_circuit"
-        fitnesses = sum(map(self.toolbox.evaluate, invalid_inds_multi), [])
-
-        for ind, fit in zip(invalid_inds, fitnesses):
-            ind.fitness.values = fit
-
-        if halloffame is not None:
-            halloffame.update(population)
-
-        record = stats.compile(population) if stats is not None else {}
-        logbook.record(gen=0, nevals=len(invalid_inds), **record)
-
-        # if verbose:
-        #    print logbook.stream
-
-        print("\n====================== Starting Optimization ======================\n")
-
-        # Begin the generational process
-        for gen in range(1, self.max_gen + 1):
-            # Get current time
-            start_time = time.time()
-
-            # Vary the population
-            offspring = algorithms.varOr(population, self.toolbox, lambda_,
-                                         self.cx_prob, self.mut_prob)
-
-            # Evaluate the individuals with an invalid fitness
-            invalid_inds = [ind for ind in offspring if not ind.fitness.valid]
+            # Get the individuals that are not evaluated
+            invalid_inds = [ind for ind in population if not ind.fitness.valid]
 
             # Determine the number of simulation calls to the server
-            if not len(invalid_inds) % self.sim_multi:
-                n_sim = int(len(invalid_inds) / self.sim_multi)
-            else:
-                n_sim = int(len(invalid_inds) / self.sim_multi) + 1
+            n_sim = math.ceil(len(invalid_inds) / self.sim_multi)
 
             invalid_inds_multi = []
 
@@ -331,44 +285,111 @@ class OptimizerNSGA2:
                 invalid_inds_multi.append(
                     invalid_inds[(self.sim_multi*idx):(self.sim_multi*(1+idx))])
 
+            if verbose:
+                print(f"\n======== Evaluating the initial population ({len(invalid_inds)} inds) | {self.sim_multi} evals/run (max) ========")
+            else:
+                 print("\n[INFO] Evaluating the initial population")
+
+            # Evaluate the individuals with an invalid fitness
             # Fitnesses are the concatenation (sum) of all the fitnesses returned by "eval_circuit"
-            fitnesses = sum(map(self.toolbox.evaluate, invalid_inds_multi), [])
+            fitnesses = sum(map(self.toolbox.evaluate,
+                                tqdm(invalid_inds_multi, desc="Runs", unit="run", disable=(not verbose))), [])
 
             for ind, fit in zip(invalid_inds, fitnesses):
                 ind.fitness.values = fit
 
-            # Update the hall of fame with the generated individuals
-            if halloffame is not None:
-                halloffame.update(offspring)
+            # Assign the crowding distance to the individuals (no selection is done)
+            population = self.toolbox.select(population, len(population))
+
+            record = stats.compile(population)
+            logbook.record(gen=0, evals=len(invalid_inds), **record)
+
+        print("\n====================== Starting Optimization ======================")
+
+        # Begin the generational process
+        for gen in range(start_gen, self.max_gen + 1):
+            # Vary the population
+            offspring = algorithms.varOr(population, self.toolbox, lambda_,
+                                         self.cx_prob, self.mut_prob)
+
+            # Evaluate the individuals with an invalid fitness
+            invalid_inds = [ind for ind in offspring if not ind.fitness.valid]
+
+            # Determine the number of simulation calls to the server
+            n_sim = math.ceil(len(invalid_inds) / self.sim_multi)
+
+            invalid_inds_multi = []
+
+            # Split the individuals in groups of sim_multi
+            for idx in range(n_sim):
+                invalid_inds_multi.append(
+                    invalid_inds[(self.sim_multi*idx):(self.sim_multi*(1+idx))])
+
+            if verbose:
+                print(f"\n======== Generation {gen}/{self.max_gen} | {len(invalid_inds)} evals | {self.sim_multi} evals/run (max) ========")
+
+            # Evaluate the individuals with an invalid fitness
+            # Fitnesses are the concatenation (sum) of all the fitnesses returned by "eval_circuit"
+            fitnesses = sum(map(self.toolbox.evaluate,
+                                tqdm(invalid_inds_multi, desc="Runs", unit="run", disable=(not verbose))), [])
+
+            for ind, fit in zip(invalid_inds, fitnesses):
+                ind.fitness.values = fit
 
             # Select the next generation population
             population[:] = self.toolbox.select(population + offspring, mu)
 
             # Update the statistics with the new population
-            record = stats.compile(population) if stats is not None else {}
-            logbook.record(gen=gen, nevals=len(invalid_inds), **record)
-            if verbose:   # Only prints multiples of 5 gens (and not gen % 5)
-                # print(logbook.stream)
-                gen_time = time.time() - start_time
-                print(
-                    f"-------- Gen: {gen}   |   # Evals: {len(invalid_inds)}   |   Time: {gen_time:.2f}s --------")
+            record = stats.compile(population)
+            logbook.record(gen=gen, evals=len(invalid_inds), **record)
+
+            # Save a checkpoint of the evolution
+            if gen % checkpoint_freq == 0:
+                cp = dict(population=population, generation=gen,
+                          logbook=logbook, rnd_state=random.getstate())
+                with open(checkpoint_fname, 'wb') as f:
+                    pickle.dump(cp, f)
+
+            # Show the best individuals of each generation
+            if verbose:
+                print(f"\n---- Best {sel_best} individuals of this generation ----")
+
+                best_inds = tools.selBest(population, sel_best)
+
+                for i, ind in enumerate(best_inds):
+                    print(f"Ind #{i + 1} => ", end='')
+
+                    formatted_params = [f"{key}: {ind[idx]:.2g}"
+                                        for idx, key in enumerate(self.circuit_vars)]
+                    print(' | '.join(formatted_params))
+
+                    formatted_fits = [f"{key}: {ind.fitness.values[idx]:.2g}"
+                                      for idx, key in enumerate(list(self.objectives.keys()))]
+                    print(' | '.join(formatted_fits))
 
         print("\n====================== Optimization Finished ======================\n")
 
         return population, logbook
 
-    def run_ga(self, stats=False, verbose=False):
-        """[summary]
+    def run_ga(self, checkpoint_fname, checkpoint_freq=1,
+               checkpoint=None, verbose=True, sel_best=3):
+        """Wrapper for the 'ga_mu_plus_lambda' function
+
+        Arguments:
+            checkpoint_fname {string} -- Name of the checkpoint file
 
         Keyword Arguments:
-            stats {bool} -- [description] (default: {False})
-            verbose {bool} -- [description] (default: {False})
-
-        Returns:
-            [type] -- [description]
+            checkpoint_freq {int} -- Number of generations per checkpoint saving (default: 1)
+            checkpoint {string} -- Name of a checkpoint file to continue the evolution
+                                   from. If None, start a new evolution (default: None)
+            verbose {bool} -- Show info and logs (default: True)
+            sel_best {int} -- The <sel_best> individuals to show at the end of a gen (default: 3)
         """
         result, logbook = self.ga_mu_plus_lambda(mu=self.pop_size, lambda_=self.pop_size,
-                                                 statistics=stats, verbose=verbose)
+                                                 checkpoint_fname=checkpoint_fname,
+                                                 checkpoint_freq=checkpoint_freq,
+                                                 checkpoint=checkpoint,
+                                                 verbose=verbose, sel_best=sel_best)
 
         fronts = tools.emo.sortLogNondominated(result, len(result))
 

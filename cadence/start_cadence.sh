@@ -1,36 +1,38 @@
 #!/usr/bin/env sh
 
 # Project name
-export PROJECT_NAME="commonSource-tutorial"
+export PAIM_PROJECT_NAME="commonSource-tutorial"
 # Project root directory
-WORK_SPACE="/home/mdm.fernandes/Projects"
+PAIM_WORK_SPACE="/home/mdm.fernandes/Projects"
 
 ## Server info
 # Client Address
-export CLIENT_ADDR="localhost"
+export PAIM_CLIENT_ADDR="localhost"
 # Client Port
-export CLIENT_PORT="3000"
+export PAIM_CLIENT_PORT="3000"
+# Number of Cadence parallel simulations
+export PAIM_N_PARALLEL_SIM="8"
 
 #############################################
 #       Do not change the code below!       #
 #############################################
 
-# Get current date (format: yyyymmdd-hhmmss)
+# Get current date (format: yyyymmdd_hh-mm-ss)
 NOW=$(date +"%Y%m%d_%H-%M-%S")
 
 # Paths
-ROOT_DIR="$WORK_SPACE/$PROJECT_NAME"
-export SCRIPT_PATH="$ROOT_DIR/script"
-export VAR_PATH="$ROOT_DIR/$NOW/var"
-export RESULT_PATH="$ROOT_DIR/$NOW/sim"
+ROOT_DIR="$PAIM_WORK_SPACE/$PAIM_PROJECT_NAME"
+export PAIM_SCRIPT_PATH="$ROOT_DIR/script"
+export PAIM_VAR_PATH="$ROOT_DIR/$NOW/var"
+export PAIM_RESULT_PATH="$ROOT_DIR/$NOW/sim"
 
 # Create the root dir, if it doesn't exist
 if [ ! -d "$ROOT_DIR" ]; then
-    echo "*INFO* Creating $ROOT_DIR ..."
+    echo "[INFO] Creating $ROOT_DIR ..."
     mkdir $ROOT_DIR
     cp -r script/ $ROOT_DIR
 else
-    echo "*INFO* The directory $ROOT_DIR already exists."
+    echo "[INFO] The directory $ROOT_DIR already exists."
 fi
 
 # Create the session directory 
@@ -38,19 +40,19 @@ fi
 mkdir "$ROOT_DIR/$NOW"
 
 # Create the dir circuit-vars, if it doesn't exist
-if [ ! -d "$VAR_PATH" ]; then
-    echo "*INFO* Creating $VAR_PATH ..."
-    mkdir $VAR_PATH   
+if [ ! -d "$PAIM_VAR_PATH" ]; then
+    echo "[INFO] Creating $PAIM_VAR_PATH ..."
+    mkdir $PAIM_VAR_PATH   
 else    # If dir exists, delete the content
-    rm $VAR_PATH/*
+    rm $PAIM_VAR_PATH/*
 fi
 
 # Create the dir sim-results, if it doesn't exist
-if [ ! -d "$RESULT_PATH" ]; then
-    echo "*INFO* Creating $RESULT_PATH ..."
-    mkdir $RESULT_PATH
+if [ ! -d "$PAIM_RESULT_PATH" ]; then
+    echo "[INFO] Creating $PAIM_RESULT_PATH ..."
+    mkdir $PAIM_RESULT_PATH
 else    # If dir exists, delete the content
-    rm $RESULT_PATH/*
+    rm $PAIM_RESULT_PATH/*
 fi
 
 echo

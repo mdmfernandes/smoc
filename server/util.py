@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""This module contains util functions to handle data"""
+"""This module contains helpers to handle data"""
 
 import re
 from functools import reduce
@@ -30,7 +30,7 @@ def get_vars_from_file(file_path):
         'T': 'e12'
     }
 
-    pattern = r'desVar\(\s*"(?P<param>\w+)\"\s*(?P<value>\S+)\s*\)'
+    pattern = r'desVar\(\s*\"(?P<param>\w+)\"\s*(?P<value>\S+)\s*\)'
 
     with open(file_path, 'r') as f:
         content = f.read()
@@ -56,10 +56,16 @@ def store_vars_in_file(variables, file_path):
         var {dict} -- dictionary with the circuit variables
         file_path {string} -- file path
     """
+
     with open(file_path, 'w') as f:
-        # Iterate over the dictionary and save to file
-        for key, val in variables.items():
-            f.write(f"desVar(\t \"{key}\" {val}\t)\n")
+
+        for idx, var in enumerate(variables):
+            # Write the header of the correspondent test
+            f.write("ocnxlSelectTest(\"test:{0}\")\n".format(idx+1))
+
+            # Iterate over the dictionary and save variables to file
+            for key, val in var.items():
+                f.write("desVar(\t \"{0}\" {1}\t)\n".format(key, val))
 
 
 def get_results_from_file(file_path):
@@ -67,9 +73,10 @@ def get_results_from_file(file_path):
 
     Arguments:
         file_path {string} -- file path
+        n_sims {int} -- number of simulations runing in parallel
 
     Returns:
-        results {dict} -- simulation results
+        results_list {list} -- simulation results in a list of dictionaries
     """
     results = {}
 
@@ -78,8 +85,18 @@ def get_results_from_file(file_path):
     with open(file_path, 'r') as f:
         content = f.read()
 
-    for match in re.finditer(pattern, content):
-        # Save to dict
-        results[match.group('param')] = float(match.group('value'))
+    results_list = []
 
-    return results
+    for match in re.finditer(pattern, content):
+        key = match.group('param')
+        val = float(match.group('value'))
+
+        if key in results:
+            results_list.append(results)
+            results = {}
+
+        results[key] = val  # Save to dict
+
+    results_list.append(results)    # Append the last dict
+
+    return results_list

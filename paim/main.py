@@ -53,7 +53,7 @@ def get_circuit_params_from_file():
     """
     # TODO: Read from somewhere...
     # Define cicuit parameters
-    objectives = {'POWER': -1.0, 'GAIN': 1.0}
+    objectives = {'POWER': [-1.0, 'W'], 'GAIN': [1.0, 'dB']}
 
     constraints = {  # 'VDSAT':     (50e-3, 1.0),
         # 'VDS_VDSAT': (50e-3, 1.2),
@@ -67,11 +67,11 @@ def get_circuit_params_from_file():
 
     # Genes de um individuo - W1, W2 (=WB), L (=L1=L2=LB), Ib, Vbias(=VGS1)
     circuit_vars = {
-        'W1':    (1,   100),
-        'W2':    (3,   100),
-        'L':     (140e-3, 4*140e-3),
-        'IB':    (10e-6,  100e-6),
-        'VBIAS': (0.3,    1.0)
+        'W1':    [(1,   100), 'um'],
+        'W2':    [(3,   100), 'um'],
+        'L':     [(140e-3, 4*140e-3), 'um'],
+        'IB':    [(10e-6,  100e-6), 'A'],
+        'VBIAS': [(0.3,    1.0), 'V']
     }
 
     return objectives, constraints, circuit_vars
@@ -85,6 +85,8 @@ def main():
     host = server['host']
     port = server['port']
 
+    debug = True
+
     # Start the client
     try:
         print("Connecting to server...")
@@ -94,8 +96,6 @@ def main():
         return 0
 
     objectives, constraints, circuit_vars = get_circuit_params_from_file()
-
-    fronts = None
 
     try:
         print("[INFO] Loading simulator...")
@@ -110,51 +110,49 @@ def main():
         print(f"Circuit Variables: {list(circuit_vars.keys())}")
 
         # Optimizer parameters (TODO: get from somewhere)
-        pop_size = 16
-        max_gen = 3
+        pop_size = 20
+        max_gen = 2
         sim_multi = 8   # Number of parallel simulations
 
+        # Remove the units from the "circuit_vars" and from the "objectives"
+        circuit_vars_tmp = {key: val[0] for key, val in circuit_vars.items()}
+        objectives_tmp = {key: val[0] for key, val in objectives.items()}
+
         # Load the optimizer
-        paim = OptimizerNSGA2(objectives, constraints, circuit_vars, pop_size,
-                              max_gen, sim_multi, client=client)
+        paim = OptimizerNSGA2(objectives_tmp, constraints, circuit_vars_tmp, pop_size,
+                              max_gen, sim_multi, client=client, debug=debug)
 
-        fronts, logbook = paim.run_ga(stats=True, verbose=True)
 
+        # Define the checkpoint and logbook file names
         current_time = time.strftime("%Y%m%d_%H-%M", time.localtime())
+        checkpoint_fname = f"/home/miguel/Drive/dev/paim/logs/checkpoint/cp_{current_time}.pickle"
+
+        checkpoint = "/home/miguel/Drive/dev/paim/logs/checkpoint/cp_20180830_21-39.pickle"
+
+        # Run the GA
+        fronts, logbook = paim.run_ga(checkpoint_fname, checkpoint=checkpoint)
+
         # Save logbook pickled to file
-        with open(f"../logs/logbook{current_time}.pickle", 'wb') as f:
-        # Iterate over the dictionary and save to file
+        with open(f"../logs/logbook/logbook{current_time}.pickle", 'wb') as f:
             pickle.dump(logbook, f)
 
-        # Save fronts (pop of the last run) pickled to file
-        with open(f"../logs/fronts{current_time}.pickle", 'wb') as f:
-        # Iterate over the dictionary and save to file
-            pickle.dump(fronts, f)
-
-        # Read do logbook só para confirmar
-        # with open(f"../logs/logbook{current_time}.pickle", 'rb') as f:
-        #     oi = pickle.load(f)
-
-        # print(oi)
-
         # Print statistics
-        plt.plot_pareto_fronts(fronts, paim.toolbox.evaluate, sim_multi)
+        plt.plot_pareto_fronts(fronts, circuit_vars, objectives, plot_file='fronts.html')
 
         # plt.plot_pareto_fronts_animated(logbook, toolbox.evaluate, tools.emo.sortLogNondominated)
 
-        input("\n\nPress any key to close the program...")
-        
         print("\nShutting down.")
         req = dict(type='info', data='exit')
         client.send_data(req)
 
     except:
         print(f"my Error: {sys.exc_info()}")
-        print(fronts)
         raise
 
     client.close()  # Close the socket
     print("--- END OF CLIENT ---")
+
+    return None
 
 
 if __name__ == "__main__":

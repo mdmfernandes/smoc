@@ -122,6 +122,118 @@ ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\")))" ?name "GBW" ?plot
 ocnxlOutputExpr( "(- pv(\"V0\" \"pwr\" ?result \"dcOpInfo\"))" ?name "POWER" ?plot t)
 ocnxlEndTest() ; "test:4"
 
+;---------- Test 5 ------------- 
+ocnxlBeginTest("test:5")
+simulator( 'spectre )
+design(	 "/home/mdm.fernandes/IC6_workspace/simulation/COMMON_SOURCE/spectre/schematic/netlist/netlist")
+modelFile( 
+    '("/home/mdm.fernandes/IC6_workspace/nominal/spectre/nominalwrapper.scs" "")
+)
+definitionFile(
+    "models.scs"
+)
+analysis('ac ?start "10k"  ?stop "1G"  )
+analysis('dc ?saveOppoint t  )
+desVar(	  "IB" 100u	)
+desVar(	  "L" 0.28	)
+desVar(	  "VBIAS" 500m	)
+desVar(	  "W1" 2	)
+desVar(	  "W2" 6	)
+envOption(
+	'analysisOrder  list("dc" "ac") 
+)
+temp( 27 ) 
+ocnxlOutputExpr( "ymax(mag(v(\"/out\" ?result \"ac\")))" ?name "GAIN" ?plot t)
+ocnxlOutputExpr( "pv(\"M2.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG2" ?plot t)
+ocnxlOutputExpr( "pv(\"M1.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG1" ?plot t)
+ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\")))" ?name "GBW" ?plot t)
+ocnxlOutputExpr( "(- pv(\"V0\" \"pwr\" ?result \"dcOpInfo\"))" ?name "POWER" ?plot t)
+ocnxlEndTest() ; "test:5"
+
+;---------- Test 6 ------------- 
+ocnxlBeginTest("test:6")
+simulator( 'spectre )
+design(	 "/home/mdm.fernandes/IC6_workspace/simulation/COMMON_SOURCE/spectre/schematic/netlist/netlist")
+modelFile( 
+    '("/home/mdm.fernandes/IC6_workspace/nominal/spectre/nominalwrapper.scs" "")
+)
+definitionFile(
+    "models.scs"
+)
+analysis('ac ?start "10k"  ?stop "1G"  )
+analysis('dc ?saveOppoint t  )
+desVar(	  "IB" 50u	)
+desVar(	  "L" 0.28	)
+desVar(	  "VBIAS" 600m	)
+desVar(	  "W1" 4	)
+desVar(	  "W2" 12	)
+envOption(
+	'analysisOrder  list("dc" "ac") 
+)
+temp( 27 ) 
+ocnxlOutputExpr( "ymax(mag(v(\"/out\" ?result \"ac\")))" ?name "GAIN" ?plot t)
+ocnxlOutputExpr( "pv(\"M2.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG2" ?plot t)
+ocnxlOutputExpr( "pv(\"M1.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG1" ?plot t)
+ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\")))" ?name "GBW" ?plot t)
+ocnxlOutputExpr( "(- pv(\"V0\" \"pwr\" ?result \"dcOpInfo\"))" ?name "POWER" ?plot t)
+ocnxlEndTest() ; "test:6"
+
+;---------- Test 7 ------------- 
+ocnxlBeginTest("test:7")
+simulator( 'spectre )
+design(	 "/home/mdm.fernandes/IC6_workspace/simulation/COMMON_SOURCE/spectre/schematic/netlist/netlist")
+modelFile( 
+    '("/home/mdm.fernandes/IC6_workspace/nominal/spectre/nominalwrapper.scs" "")
+)
+definitionFile(
+    "models.scs"
+)
+analysis('ac ?start "10k"  ?stop "1G"  )
+analysis('dc ?saveOppoint t  )
+desVar(	  "IB" 200u	)
+desVar(	  "L" 0.28	)
+desVar(	  "VBIAS" 500m	)
+desVar(	  "W1" 1	)
+desVar(	  "W2" 3	)
+envOption(
+	'analysisOrder  list("dc" "ac") 
+)
+temp( 27 ) 
+ocnxlOutputExpr( "ymax(mag(v(\"/out\" ?result \"ac\")))" ?name "GAIN" ?plot t)
+ocnxlOutputExpr( "pv(\"M2.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG2" ?plot t)
+ocnxlOutputExpr( "pv(\"M1.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG1" ?plot t)
+ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\")))" ?name "GBW" ?plot t)
+ocnxlOutputExpr( "(- pv(\"V0\" \"pwr\" ?result \"dcOpInfo\"))" ?name "POWER" ?plot t)
+ocnxlEndTest() ; "test:7"
+
+;---------- Test 8 ------------- 
+ocnxlBeginTest("test:8")
+simulator( 'spectre )
+design(	 "/home/mdm.fernandes/IC6_workspace/simulation/COMMON_SOURCE/spectre/schematic/netlist/netlist")
+modelFile( 
+    '("/home/mdm.fernandes/IC6_workspace/nominal/spectre/nominalwrapper.scs" "")
+)
+definitionFile(
+    "models.scs"
+)
+analysis('ac ?start "10k"  ?stop "1G"  )
+analysis('dc ?saveOppoint t  )
+desVar(	  "IB" 50u	)
+desVar(	  "L" 0.28	)
+desVar(	  "VBIAS" 600m	)
+desVar(	  "W1" 6	)
+desVar(	  "W2" 18	)
+envOption(
+	'analysisOrder  list("dc" "ac") 
+)
+temp( 27 ) 
+ocnxlOutputExpr( "ymax(mag(v(\"/out\" ?result \"ac\")))" ?name "GAIN" ?plot t)
+ocnxlOutputExpr( "pv(\"M2.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG2" ?plot t)
+ocnxlOutputExpr( "pv(\"M1.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG1" ?plot t)
+ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\")))" ?name "GBW" ?plot t)
+ocnxlOutputExpr( "(- pv(\"V0\" \"pwr\" ?result \"dcOpInfo\"))" ?name "POWER" ?plot t)
+ocnxlEndTest() ; "test:8"
+
 ;====================== Job setup ==============================================
 ocnxlJobSetup( '(
 	"blockemail" "1"

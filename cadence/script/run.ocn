@@ -7,7 +7,11 @@ ocnxlRun( ?mode 'sweepsAndCorners ?nominalCornerEnabled t ?allCornersEnabled nil
 ; ?verboseMode nil
 
 ;====================== Print to file ==========================================
-for( i 1 4   
+; Get the number of simulations from an environment variable
+n_sim = getShellEnvVar("PAIM_N_SIM")
+n_sim = atoi(n_sim)
+
+for( i 1 n_sim   
     sprintf(name "test:%d" i)
 
 	POWER = calcVal("POWER" name)

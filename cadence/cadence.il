@@ -11,19 +11,43 @@ procedure( loadSimulator(filePath)
     
 )
 
-procedure( updateAndRun(filePath resultPath)
+procedure( updateAndRun(filePath resultPath numSim)
     load(filePath)
+
+    ;; Set a environment variable with the number of simulations
+    sprintf(numSimStr "%d" numSim)   ;; Convert to string
+    setShellEnvVar("PAIM_N_SIM" numSimStr)
+
+    ;; Get max number of simulations
+    maxSim = getShellEnvVar("PAIM_N_PARALLEL_SIM")
+    maxSim = atoi(maxSim)   ;; Convert to integer
+
+    ;; Disable unecessary simulations
+    if( numSim < maxSim then
+        for( i (numSim + 1) maxSim
+            sprintf(testName "test:%d" i)
+            ocnxlDisableTest(testName)
+        )               
+    )
 
     ;; Set results file path
     setShellEnvVar(resultPath)
 
-    runSimulation()
-    ;; TODO
+    runSimulation() 
+
+    ;; Re-enable the simulations
+    if( numSim < maxSim then
+        for( i (numSim + 1) maxSim
+            sprintf(testName "test:%d" i)
+            ocnxlEnableTest(testName)
+        )               
+    )
+    
     msg = "updateAndRun_OK"
 )
 
 procedure( runSimulation()
-    runPath = getShellEnvVar("SCRIPT_PATH")
+    runPath = getShellEnvVar("PAIM_SCRIPT_PATH")
     print(runPath)
     runFile = strcat(runPath "/run.ocn")
     load(runFile)
