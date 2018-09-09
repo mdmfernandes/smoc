@@ -1,4 +1,0 @@
-# Server configuration
-server:
-    host: "localhost"
-    port: 3000

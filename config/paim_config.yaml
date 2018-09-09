@@ -1,0 +1,43 @@
+# Project configuration
+project_cfg:
+    project_name: teste1
+    project_path: /home/miguel/paim-teste
+    checkpoint_path: checkpoint
+    logbook_path: logbook
+    plot_path: plot
+    verbose: True
+# Optimizer configuration
+optimizer_cfg:
+    pop_size: 19
+    max_gen: 1
+    mut_prob: 0.1
+    cx_prob: 0.8
+    mut_eta: 20
+    cx_eta: 20
+    sel_best: 5
+    checkpoint_freq: 1
+# Optimizer objectives 
+# Format: [<fitness weight>, <param units>]
+objectives:
+    POWER: [-1.0, W]
+    GAIN: [1.0, dB]
+# Circuit constraints
+# Format: [<minimum value>, <maximum value>]
+constraints:
+    GBW: [10e6, 1e9]
+    GAIN: [30, 100]
+    OS: [0.7, 1.2]
+    REG1: [2, 3]
+    REG2: [2, 3]
+# Circuit variables
+# Format: [[<minimum value>, <maximum value>], <param units>]
+circuit_vars:
+    W1: [[1,   100], um]
+    W2: [[3,   100], um]
+    L: [[140e-3, 560e-3], um]
+    IB: [[10e-6,  100e-6], A]
+    VBIAS: [[0.3,    1.0], V]
+# Server configuration
+server_cfg:
+    host: "localhost"
+    port: 3000

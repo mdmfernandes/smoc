@@ -2,6 +2,7 @@
     "python.pythonPath": "/home/miguel/anaconda3/envs/deap/bin/python",
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": true,
+    "python.jediEnabled": false,
     //"python.linting.pydocstyleEnabled": true,
     //"python.linting.flake8Enabled": true
 }

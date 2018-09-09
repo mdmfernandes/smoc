@@ -19,4 +19,4 @@ Benchmarks seed: 2^14 = 16384
 ind: 100
 gen: 30
 sim_multi: 8
-time:  ~ 
+time: 4587.14s ~ 1h17m

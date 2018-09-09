@@ -1,22 +1,37 @@
-# -*- coding: utf-8 -*-
-"""Graphics plotting functions"""
+# This file is part of PAIM
+# Copyright (C) 2018 Miguel Fernandes
+#
+# PAIM is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PAIM is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+"""Helpers to plot graphics."""
+
+from bokeh.models import PrintfTickFormatter
 from bokeh.palettes import mpl
 from bokeh.plotting import ColumnDataSource, figure, output_file, show
 
 from .text_format import eng_string
 
 
-def plot_pareto_fronts(fronts, circuit_vars, objectives, plot_file):
-    """Plot the pareto fronts given by the optimizer
+def plot_pareto_fronts(fronts, circuit_vars, objectives, plot_fname):
+    """Plot the pareto fronts given by the optimizer.
 
     Arguments:
-        fronts {list} -- Pareto fronts
-        circuit_vars {dict} -- Circuit design variables w/ units
-        objectives {dict} -- Circuit optimization objectives w/ units
-        plot_file {string} -- Path of the plot file
+        fronts {list} -- pareto fronts
+        circuit_vars {dict} -- circuit design variables w/ units
+        objectives {dict} -- circuit optimization objectives w/ units
+        plot_fname {str} -- path of the plot file
     """
-
     vars_names = list(circuit_vars.keys())
     vars_units = [var[1] for var in circuit_vars.values()]
 
@@ -25,7 +40,8 @@ def plot_pareto_fronts(fronts, circuit_vars, objectives, plot_file):
 
     # Define the colors to use in the graphic, according to the number of pareto fronts
     # each front = one color
-    colors = mpl['Viridis'][len(fronts)]
+    num_colors = min(3, len(fronts))
+    colors = mpl['Viridis'][num_colors]
 
     # Add the Fitnesses to the tooltips
     tooltips = [(fit, f"@{fit}") for fit in fit_names]
@@ -37,18 +53,24 @@ def plot_pareto_fronts(fronts, circuit_vars, objectives, plot_file):
     tooltips.extend([(var, f"@{var}") for var in vars_names])
 
     # Create the figure
+    date_time = plot_fname.split('/')[-1].split('.')[0]
+    title = f"Plotting {len(fronts)} pareto fronts - {date_time.replace('-', ':')}"
     p = figure(plot_width=800, plot_height=800, tooltips=tooltips,
-               title=f"Plotting {len(fronts)} pareto fronts",
-               active_scroll='wheel_zoom')
+               title=title, active_scroll='wheel_zoom')
 
     for idx, inds in enumerate(fronts):
         # Get the fitness values
         fits = list(map(lambda ind: ind.fitness.values, inds))
 
+        # The '*' separates the various fitnesses, otherwise it will try to zip
+        # all the fitnesses at the same time and put them in x,y, which will give
+        # an error if we have more than two fitness (and even with 2 the result
+        # won't be the expected)
+
         (x, y) = zip(*fits) # Unpack the fitnesses
 
         # Scale the power to uW
-        x = [val*1e6 for val in x]
+        #x = [val*1e6 for val in x]
         # or x = list(map(lambda x: x*1e6, x))
         # List comprehension is more pythonic and it's usually faster
         # if we need to use lambdas in map
@@ -68,7 +90,7 @@ def plot_pareto_fronts(fronts, circuit_vars, objectives, plot_file):
                 {var: [f"{eng_string(ind[j])}{vars_units[j]}" for ind in inds]})
 
         p.circle('x', 'y', source=ColumnDataSource(data=source), size=10,
-                 color=colors[idx], muted_color=colors[idx], muted_alpha=0.2,
+                 color=colors[idx], muted_color=colors[idx], muted_alpha=0.1,
                  legend=f"Pareto {idx+1} (ind={len(inds)})")
 
     # Format the title
@@ -76,6 +98,7 @@ def plot_pareto_fronts(fronts, circuit_vars, objectives, plot_file):
     p.title.align = 'center'
     # Format the axis labels
     p.xaxis.axis_label = f"{fit_names[0]} [{fit_units[0]}]"
+    p.xaxis.formatter = PrintfTickFormatter(format='%.2e')
     p.yaxis.axis_label = f"{fit_names[1]} [{fit_units[1]}]"
     p.axis.axis_label_text_font_style = 'bold'
     p.axis.axis_label_text_font_size = '11pt'
@@ -84,7 +107,7 @@ def plot_pareto_fronts(fronts, circuit_vars, objectives, plot_file):
     p.legend.click_policy = "mute"
     p.legend.label_text_font_size = '8pt'
 
-    output_file(plot_file)
+    output_file(plot_fname)
 
     show(p)
 
@@ -110,6 +133,9 @@ def plot_pareto_fronts(fronts, circuit_vars, objectives, plot_file):
 #     fig = plt.figure(figsize=(8,8))
 #     ax = fig.gca()
 #     plot_colors = seaborn.color_palette("Set1", n_colors=100)
-#     anim = animation.FuncAnimation(fig, lambda i: animate(i, logbook, evaluate, ax, plot_colors, sortLogNondominated), frames=len(logbook), interval=150, blit=True)
+#     anim = animation.FuncAnimation(fig,
+#                                    lambda i: animate(i, logbook, evaluate, ax,
+#                                                      plot_colors, sortLogNondominated),
+#                                    frames=len(logbook), interval=150, blit=True)
 #     anim.save('animation.gif', writer='imagemagick', fps=10)
 #     #plt.pause(0.01)

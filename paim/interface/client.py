@@ -1,9 +1,24 @@
-# -*- coding: utf-8 -*-
-"""Client that communicates with Cadence through the server"""
+# This file is part of PAIM
+# Copyright (C) 2018 Miguel Fernandes
+#
+# PAIM is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PAIM is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+"""Client that communicates with Cadence through the server."""
+
+import json
 import socket
 import struct
-import json
 
 
 class Client:
@@ -14,13 +29,12 @@ class Client:
     All the data is serialized in JSON and sent as a JSON string.
 
     Arguments:
-        host {string} -- host IP address
-        port {integer} -- host PORT
+        host {str} -- host IP address
+        port {int} -- host PORT
     """
 
     def __init__(self, host, port):
-        """Start the client"""
-
+        """Start the client."""
         self.host = host
         self.port = port
 
@@ -47,9 +61,8 @@ class Client:
             # Re-raise this error to call the except of the main
             raise RuntimeError(f"Error creating socket: {err}")
 
-
     def send_data(self, obj):
-        """Send an object using sockets
+        """Send an object using sockets.
 
         Arguments:
             obj {dict} -- object to send
@@ -83,13 +96,13 @@ class Client:
             total_sent += sent
 
     def recv_data(self):
-        """Receive an object using sockets
+        """Receive an object using sockets.
 
         Raises:
             RuntimeError -- if the socket connection is broken
 
         Returns:
-            obj {dict} -- decoded and de-serialized received data
+            dict -- decoded and de-serialized received data
         """
         data_len = self.recv_bytes(4)
 
@@ -109,16 +122,16 @@ class Client:
         return obj
 
     def recv_bytes(self, n_bytes):
-        """Receive a specified number of bytes using sockets
+        """Receive a specified number of bytes using sockets.
 
         Arguments:
-            n_bytes {integer} -- number of bytes to receive
+            n_bytes {int} -- number of bytes to receive
 
         Raises:
             RuntimeError -- if the socket connection is broken
 
         Returns:
-            data {bytes} -- received stream of bytes
+            bytes -- received stream of bytes
         """
         data = b''  # Bytes literal
         data_len = len(data)
@@ -127,7 +140,8 @@ class Client:
             packet = self.socket.recv(min(n_bytes - data_len, 1024))
 
             if not packet:
-                raise RuntimeError("Socket connection broken while receiving a byte")
+                raise RuntimeError(
+                    "Socket connection broken while receiving a byte")
 
             data_len += len(packet)
             data += packet
@@ -135,5 +149,5 @@ class Client:
         return data
 
     def close(self):
-        """Close the socket"""
+        """Close the socket."""
         self.socket.close()
