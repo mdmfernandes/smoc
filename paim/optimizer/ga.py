@@ -13,7 +13,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-
 """NSGA-II genetic algorithm using DEAP."""
 
 import array
@@ -59,9 +58,9 @@ class OptimizerNSGA2:
     """
 
     # pylint: disable=too-many-instance-attributes,no-member
-    def __init__(self, objectives, constraints, circuit_vars, pop_size,
-                 max_gen, client=None, mut_prob=0.1, cx_prob=0.8,
-                 mut_eta=20, cx_eta=20, debug=False):
+    def __init__(self,objectives, constraints, circuit_vars, pop_size, max_gen,
+                 client=None, mut_prob=0.1, cx_prob=0.8, mut_eta=20, cx_eta=20,
+                 debug=False):
         """Create the NSGA-II Optimizer using the DEAP library."""
         # If debugging we should have a fixed seed to have coherent results
         if debug:
@@ -91,8 +90,7 @@ class OptimizerNSGA2:
         fitness_weights = tuple(objectives.values())
         creator.create("FitnessMulti", base.Fitness, weights=fitness_weights)
         # Define an individual
-        creator.create("Individual", array.array, typecode='d',
-                       fitness=creator.FitnessMulti)
+        creator.create("Individual", array.array, typecode='d', fitness=creator.FitnessMulti)
 
         toolbox = base.Toolbox()
 
@@ -100,12 +98,10 @@ class OptimizerNSGA2:
         toolbox.register("attr_float", self.uniform, bound_low, bound_up)
         # Define individuo como a lista de floats (itera pelo "attr_float"
         # e coloca o resultado no "creator.Individual")
-        toolbox.register("individual", tools.initIterate,
-                         creator.Individual, toolbox.attr_float)
+        toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.attr_float)
         # Define a população como uma lista de individuos (o nro de individuos
         # só é definido quando se inicializa a pop)
-        toolbox.register("population", tools.initRepeat,
-                         list, toolbox.individual)
+        toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
         # operator for selecting individuals for breeding the next generation
         toolbox.register("select", tools.selNSGA2)
@@ -116,13 +112,12 @@ class OptimizerNSGA2:
         ##self.toolbox.decorate("evaluate", (self.feasibility, 0, self.distance))
 
         # register the crossover operator
-        toolbox.register("mate", tools.cxSimulatedBinaryBounded,
+        toolbox.register("mate", tools.cxSimulatedBinaryBounded, 
                          low=bound_low, up=bound_up, eta=cx_eta)
 
         # register the mutation operator
-        toolbox.register("mutate", tools.mutPolynomialBounded,
-                         low=bound_low, up=bound_up,
-                         eta=mut_eta, indpb=mut_prob)
+        toolbox.register("mutate", tools.mutPolynomialBounded, low=bound_low,
+                         up=bound_up, eta=mut_eta, indpb=mut_prob)
 
         self.toolbox = toolbox
 
@@ -169,8 +164,7 @@ class OptimizerNSGA2:
         # Map the individual variables values to a dictionary with the
         # respective variable value and name
         for ind in individuals:
-            variables.append(
-                {key: ind[idx] for idx, key in enumerate(self.circuit_vars)})
+            variables.append({key: ind[idx] for idx, key in enumerate(self.circuit_vars)})
 
         # Send the request to the server
         req = dict(type='updateAndRun', data=variables)
@@ -185,14 +179,13 @@ class OptimizerNSGA2:
             print(f"Error: {err}")
 
         if res_type != 'updateAndRun':
-            raise Exception(
-                "[ERROR] Simulation error!!! Check variables defaults, etc.")
+            raise Exception("[ERROR] Simulation error!!! Check variables defaults, etc.")
 
         fitnesses = []
 
         # Get the fitnesses for all individuals
         for idx in range(len(individuals)):
-            fitness = []    # Fitnesses of one individual
+            fitness = []  # Fitnesses of one individual
 
             sim_res_ind = sim_res[idx]  # Simulation results of one individual
 
@@ -217,20 +210,15 @@ class OptimizerNSGA2:
             #fitnesses = [fit * penalty for fit in fitnesses]
             # TODO: Talvez verificar se o penalty for para minimizar ou maximizar
             # e atribuir o penalty de acordo
-            fitness = [(1/penalty) * fitness[0], penalty * fitness[1]]
+            fitness = [(1 / penalty) * fitness[0], penalty * fitness[1]]
 
             fitnesses.append(tuple(fitness))
 
-            #print(f"FITNESS: {fitness}")
-            #print(f"VARS: {individuals[idx]}")
-            #print(f"RESULTS: {sim_res_ind}")
-            # print("==================================================")
-
         return fitnesses
 
-    @timecall   # Returns the function running time
-    def ga_mu_plus_lambda(self, mu, lambda_, sim_multi, checkpoint_load,
-                          checkpoint_fname, checkpoint_freq, sel_best, verbose):
+    @timecall  # Returns the function running time
+    def ga_mu_plus_lambda(self, mu, lambda_, sim_multi, checkpoint_load, checkpoint_fname,
+                          checkpoint_freq, sel_best, verbose):
         """The (mu + lambda) evolutionary algorithm.
 
         ADAPTED FROM: https://github.com/DEAP/deap/blob/master/deap/algorithms.py
@@ -280,12 +268,13 @@ class OptimizerNSGA2:
             start_gen = cp["generation"] + 1
             logbook = cp["logbook"]
             random.setstate(cp["rnd_state"])
-            print(textwrap.dedent(f"""
+            print(
+                textwrap.dedent(f"""
                 ======== Running from a checkpoint ========
                 -- Population size: {len(population)}
                 -- Current generation: {start_gen}"""))
 
-        else:   # Create the population
+        else:  # Create the population
             population = self.toolbox.population(n=self.pop_size)
             start_gen = 1
 
@@ -303,8 +292,7 @@ class OptimizerNSGA2:
 
             # Split the individuals in groups of sim_multi
             for idx in range(n_sim):
-                invalid_inds_multi.append(
-                    invalid_inds[(sim_multi*idx):(sim_multi*(1+idx))])
+                invalid_inds_multi.append(invalid_inds[(sim_multi * idx):(sim_multi * (1 + idx))])
 
             if verbose:
                 msg = f"\n======== Evaluating the initial population ({len(invalid_inds)} inds)"
@@ -333,8 +321,8 @@ class OptimizerNSGA2:
         # Begin the generational process
         for gen in range(start_gen, self.max_gen + 1):
             # Vary the population
-            offspring = algorithms.varOr(population, self.toolbox, lambda_,
-                                         self.cx_prob, self.mut_prob)
+            offspring = algorithms.varOr(population, self.toolbox, lambda_, self.cx_prob,
+                                         self.mut_prob)
 
             # Evaluate the individuals with an invalid fitness
             invalid_inds = [ind for ind in offspring if not ind.fitness.valid]
@@ -346,8 +334,7 @@ class OptimizerNSGA2:
 
             # Split the individuals in groups of sim_multi
             for idx in range(n_sim):
-                invalid_inds_multi.append(
-                    invalid_inds[(sim_multi*idx):(sim_multi*(1+idx))])
+                invalid_inds_multi.append(invalid_inds[(sim_multi * idx):(sim_multi * (1 + idx))])
 
             if verbose:
                 msg = f"\n======== Generation {gen}/{self.max_gen} | {len(invalid_inds)} evals"
@@ -372,11 +359,11 @@ class OptimizerNSGA2:
 
             # Save a checkpoint of the evolution
             if gen % checkpoint_freq == 0:
-                cp = dict(population=population, generation=gen,
-                          logbook=logbook, rnd_state=random.getstate())
+                cp = dict(population=population, generation=gen, logbook=logbook,
+                          rnd_state=random.getstate())
                 file.write_pickle(checkpoint_fname, cp)
 
-            if verbose: # Show the best individuals of each generation
+            if verbose:  # Show the best individuals of each generation
                 print(f"\n---- Best {sel_best} individuals of this generation ----")
 
                 best_inds = tools.selBest(population, sel_best)
@@ -384,12 +371,15 @@ class OptimizerNSGA2:
                 for i, ind in enumerate(best_inds):
                     print(f"Ind #{i + 1} => ", end='')
 
-                    formatted_params = [f"{key}: {ind[idx]:.2g}"
-                                        for idx, key in enumerate(self.circuit_vars)]
+                    formatted_params = [
+                        f"{key}: {ind[idx]:.2g}" for idx, key in enumerate(self.circuit_vars)
+                    ]
                     print(' | '.join(formatted_params))
 
-                    formatted_fits = [f"{key}: {ind.fitness.values[idx]:.2g}"
-                                      for idx, key in enumerate(list(self.objectives.keys()))]
+                    formatted_fits = [
+                        f"{key}: {ind.fitness.values[idx]:.2g}"
+                        for idx, key in enumerate(list(self.objectives.keys()))
+                    ]
                     print(' | '.join(formatted_fits))
 
         print("\n====================== Optimization Finished ======================\n")
@@ -406,7 +396,7 @@ class OptimizerNSGA2:
         Keyword Arguments:
             sim_multi {int} -- number of parallel simulations (default: 1)
             checkpoint_load {str or None} -- name of the checkpoint file to load,
-            if provided (default: None)
+                if provided (default: None)
             checkpoint_freq {int} -- checkpoint saving frequency (relative to gen) (default: 1)
             sel_best {int} -- number of best individuals to log at each generation (default: 5)
             verbose {bool} -- run in verbosity mode (default: True)
@@ -414,12 +404,15 @@ class OptimizerNSGA2:
         Returns:
             tuple -- pareto fronts and the logbook of the evolution
         """
-        result, logbook = self.ga_mu_plus_lambda(mu=self.pop_size, lambda_=self.pop_size,
-                                                 sim_multi=sim_multi,
-                                                 checkpoint_load=checkpoint_load,
-                                                 checkpoint_fname=checkpoint_fname,
-                                                 checkpoint_freq=checkpoint_freq,
-                                                 sel_best=sel_best, verbose=verbose)
+        result, logbook = self.ga_mu_plus_lambda(
+            mu=self.pop_size,
+            lambda_=self.pop_size,
+            sim_multi=sim_multi,
+            checkpoint_load=checkpoint_load,
+            checkpoint_fname=checkpoint_fname,
+            checkpoint_freq=checkpoint_freq,
+            sel_best=sel_best,
+            verbose=verbose)
 
         # Get the pareto fronts from the optimization results
         fronts = tools.emo.sortLogNondominated(result, len(result))

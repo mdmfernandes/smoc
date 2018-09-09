@@ -20,3 +20,13 @@ ind: 100
 gen: 30
 sim_multi: 8
 time: 4587.14s ~ 1h17m
+
+09-09-2018
+-Multi-simulações dinamicas
+-Progress bar
+- No verbose no Cadence
+@ Faraday 65nm
+ind: 100
+gen: 30
+sim_multi: 8
+time: 4587.14s ~ 1h17m

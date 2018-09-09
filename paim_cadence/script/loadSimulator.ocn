@@ -34,7 +34,7 @@ temp( 27 )
 ocnxlOutputExpr( "ymax(mag(v(\"/out\" ?result \"ac\")))" ?name "GAIN" ?plot t)
 ocnxlOutputExpr( "pv(\"M2.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG2" ?plot t)
 ocnxlOutputExpr( "pv(\"M1.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG1" ?plot t)
-ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\")))" ?name "GBW" ?plot t)
+ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\"))) || 0.0" ?name "GBW" ?plot t)
 ocnxlOutputExpr( "(- pv(\"V0\" \"pwr\" ?result \"dcOpInfo\"))" ?name "POWER" ?plot t)
 ocnxlEndTest() ; "test:1"
 
@@ -62,7 +62,7 @@ temp( 27 )
 ocnxlOutputExpr( "ymax(mag(v(\"/out\" ?result \"ac\")))" ?name "GAIN" ?plot t)
 ocnxlOutputExpr( "pv(\"M2.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG2" ?plot t)
 ocnxlOutputExpr( "pv(\"M1.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG1" ?plot t)
-ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\")))" ?name "GBW" ?plot t)
+ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\"))) || 0.0" ?name "GBW" ?plot t)
 ocnxlOutputExpr( "(- pv(\"V0\" \"pwr\" ?result \"dcOpInfo\"))" ?name "POWER" ?plot t)
 ocnxlEndTest() ; "test:2"
 
@@ -90,7 +90,7 @@ temp( 27 )
 ocnxlOutputExpr( "ymax(mag(v(\"/out\" ?result \"ac\")))" ?name "GAIN" ?plot t)
 ocnxlOutputExpr( "pv(\"M2.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG2" ?plot t)
 ocnxlOutputExpr( "pv(\"M1.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG1" ?plot t)
-ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\")))" ?name "GBW" ?plot t)
+ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\"))) || 0.0" ?name "GBW" ?plot t)
 ocnxlOutputExpr( "(- pv(\"V0\" \"pwr\" ?result \"dcOpInfo\"))" ?name "POWER" ?plot t)
 ocnxlEndTest() ; "test:3"
 
@@ -118,7 +118,7 @@ temp( 27 )
 ocnxlOutputExpr( "ymax(mag(v(\"/out\" ?result \"ac\")))" ?name "GAIN" ?plot t)
 ocnxlOutputExpr( "pv(\"M2.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG2" ?plot t)
 ocnxlOutputExpr( "pv(\"M1.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG1" ?plot t)
-ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\")))" ?name "GBW" ?plot t)
+ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\"))) || 0.0" ?name "GBW" ?plot t)
 ocnxlOutputExpr( "(- pv(\"V0\" \"pwr\" ?result \"dcOpInfo\"))" ?name "POWER" ?plot t)
 ocnxlEndTest() ; "test:4"
 
@@ -146,7 +146,7 @@ temp( 27 )
 ocnxlOutputExpr( "ymax(mag(v(\"/out\" ?result \"ac\")))" ?name "GAIN" ?plot t)
 ocnxlOutputExpr( "pv(\"M2.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG2" ?plot t)
 ocnxlOutputExpr( "pv(\"M1.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG1" ?plot t)
-ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\")))" ?name "GBW" ?plot t)
+ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\"))) || 0.0" ?name "GBW" ?plot t)
 ocnxlOutputExpr( "(- pv(\"V0\" \"pwr\" ?result \"dcOpInfo\"))" ?name "POWER" ?plot t)
 ocnxlEndTest() ; "test:5"
 
@@ -174,7 +174,7 @@ temp( 27 )
 ocnxlOutputExpr( "ymax(mag(v(\"/out\" ?result \"ac\")))" ?name "GAIN" ?plot t)
 ocnxlOutputExpr( "pv(\"M2.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG2" ?plot t)
 ocnxlOutputExpr( "pv(\"M1.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG1" ?plot t)
-ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\")))" ?name "GBW" ?plot t)
+ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\"))) || 0.0" ?name "GBW" ?plot t)
 ocnxlOutputExpr( "(- pv(\"V0\" \"pwr\" ?result \"dcOpInfo\"))" ?name "POWER" ?plot t)
 ocnxlEndTest() ; "test:6"
 
@@ -202,7 +202,7 @@ temp( 27 )
 ocnxlOutputExpr( "ymax(mag(v(\"/out\" ?result \"ac\")))" ?name "GAIN" ?plot t)
 ocnxlOutputExpr( "pv(\"M2.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG2" ?plot t)
 ocnxlOutputExpr( "pv(\"M1.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG1" ?plot t)
-ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\")))" ?name "GBW" ?plot t)
+ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\"))) || 0.0" ?name "GBW" ?plot t)
 ocnxlOutputExpr( "(- pv(\"V0\" \"pwr\" ?result \"dcOpInfo\"))" ?name "POWER" ?plot t)
 ocnxlEndTest() ; "test:7"
 
@@ -230,7 +230,7 @@ temp( 27 )
 ocnxlOutputExpr( "ymax(mag(v(\"/out\" ?result \"ac\")))" ?name "GAIN" ?plot t)
 ocnxlOutputExpr( "pv(\"M2.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG2" ?plot t)
 ocnxlOutputExpr( "pv(\"M1.m1\" \"region\" ?result \"dcOpInfo\")" ?name "REG1" ?plot t)
-ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\")))" ?name "GBW" ?plot t)
+ocnxlOutputExpr( "gainBwProd(mag(v(\"/out\" ?result \"ac\"))) || 0.0" ?name "GBW" ?plot t)
 ocnxlOutputExpr( "(- pv(\"V0\" \"pwr\" ?result \"dcOpInfo\"))" ?name "POWER" ?plot t)
 ocnxlEndTest() ; "test:8"
 

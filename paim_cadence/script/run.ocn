@@ -3,7 +3,7 @@ out_path = getShellEnvVar("RESULT_FILE")
 outf = outfile(out_path "w")
 
 ;====================== Run simulation =========================================
-ocnxlRun( ?mode 'sweepsAndCorners ?nominalCornerEnabled t ?allCornersEnabled nil ?allSweepsEnabled nil)
+ocnxlRun( ?mode 'sweepsAndCorners ?nominalCornerEnabled t ?allCornersEnabled nil ?allSweepsEnabled nil ?verboseMode nil)
 ; ?verboseMode nil
 
 ;====================== Print to file ==========================================
@@ -18,7 +18,7 @@ for( i 1 n_sim
     GAIN = calcVal("GAIN" name)
     REG1 = calcVal("REG1" name)
     REG2 = calcVal("REG2" name)
-    GBW = calcVal("GBW" name ?defaultVal 24.2424)
+    GBW = calcVal("GBW" name)
     OS = 0.9
 
     fprintf( outf "%s\t%e\n", "POWER", POWER)

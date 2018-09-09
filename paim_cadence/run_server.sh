@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-server_path="server/server.py"
+cadence_py="cadence.py"
 
-cmd="python ${server_path}"
+cmd="python $cadence_py"
 
 # replace the shell with a given program (executing it, not as new process)
 exec $cmd

@@ -13,7 +13,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-
 """Helpers to plot graphics."""
 
 from bokeh.models import PrintfTickFormatter
@@ -40,7 +39,7 @@ def plot_pareto_fronts(fronts, circuit_vars, objectives, plot_fname):
 
     # Define the colors to use in the graphic, according to the number of pareto fronts
     # each front = one color
-    num_colors = min(3, len(fronts))
+    num_colors = max(3, len(fronts))
     colors = mpl['Viridis'][num_colors]
 
     # Add the Fitnesses to the tooltips
@@ -55,8 +54,8 @@ def plot_pareto_fronts(fronts, circuit_vars, objectives, plot_fname):
     # Create the figure
     date_time = plot_fname.split('/')[-1].split('.')[0]
     title = f"Plotting {len(fronts)} pareto fronts - {date_time.replace('-', ':')}"
-    p = figure(plot_width=800, plot_height=800, tooltips=tooltips,
-               title=title, active_scroll='wheel_zoom')
+    p = figure(plot_width=800, plot_height=800, tooltips=tooltips, title=title,
+               active_scroll='wheel_zoom')
 
     for idx, inds in enumerate(fronts):
         # Get the fitness values
@@ -66,8 +65,7 @@ def plot_pareto_fronts(fronts, circuit_vars, objectives, plot_fname):
         # all the fitnesses at the same time and put them in x,y, which will give
         # an error if we have more than two fitness (and even with 2 the result
         # won't be the expected)
-
-        (x, y) = zip(*fits) # Unpack the fitnesses
+        (x, y) = zip(*fits)  # Unpack the fitnesses
 
         # Scale the power to uW
         #x = [val*1e6 for val in x]
@@ -80,14 +78,12 @@ def plot_pareto_fronts(fronts, circuit_vars, objectives, plot_fname):
 
         # Add the fitnesses to the tooltips
         for j, fit in enumerate(fit_names):
-            source.update(
-                {fit: [f"{eng_string(f[j])}{fit_units[j]}" for f in fits]})
+            source.update({fit: [f"{eng_string(f[j])}{fit_units[j]}" for f in fits]})
 
         # Add the circuit variables to the tooltips
         # ind[j] é a variável 'j' do individuo
         for j, var in enumerate(vars_names):
-            source.update(
-                {var: [f"{eng_string(ind[j])}{vars_units[j]}" for ind in inds]})
+            source.update({var: [f"{eng_string(ind[j])}{vars_units[j]}" for ind in inds]})
 
         p.circle('x', 'y', source=ColumnDataSource(data=source), size=10,
                  color=colors[idx], muted_color=colors[idx], muted_alpha=0.1,

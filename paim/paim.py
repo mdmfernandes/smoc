@@ -16,7 +16,6 @@
 """PAIM main module."""
 
 import os
-import sys
 import time
 
 from .interface.client import Client
@@ -36,7 +35,7 @@ def load_simulator(client):
         client {handler} -- client that communicates with the simulator
 
     Raises:
-        Exception -- if the response from the server is not the expected
+        TypeError -- if the server response is not from the expected type
 
     Returns:
         dict -- circuit variables
@@ -49,17 +48,16 @@ def load_simulator(client):
         res_type = res['type']
         data = res['data']
     except KeyError as err:  # if the key does not exist
-        print(f"Error: {err}")
+        raise KeyError(err)
 
     if res_type != 'loadSimulator':
-        raise Exception('The response type should be "loadSimulator"!!!')
+        raise TypeError('The response type should be "loadSimulator"!!!')
 
     return data
 
 
-def print_paim_summary(current_time, sim_multi, project_dir, project_cfg,
-                       optimizer_cfg, objectives, constraints, circuit_vars,
-                       checkpoint_load, debug):
+def print_paim_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_cfg,
+                       objectives, constraints, circuit_vars, checkpoint_load, debug):
     """Print a summary with the project, circuit, and optimizer configurations.
 
     Arguments:
@@ -75,8 +73,7 @@ def print_paim_summary(current_time, sim_multi, project_dir, project_cfg,
         debug {bool} -- PAIM running mode (debug mode if True)
     """
     running_mode = "debug" if debug else "normal"
-    checkpoint_fname = checkpoint_load.split('/')[-1].split(
-        '.')[0] if checkpoint_load else "no"
+    checkpoint_fname = checkpoint_load.split('/')[-1].split('.')[0] if checkpoint_load else "no"
 
     fname = f"{project_dir}/summary_{current_time}.txt"
 
@@ -129,17 +126,25 @@ def run_paim(config_file, checkpoint_load, debug):
     paim_cfg = file.read_yaml(config_file)
 
     if not paim_cfg:  # If config is not valid
-        sys.exit("Invalid file name or config...")
+        print("[ERROR] Invalid file name or config...")
+        print("\n**** Ending program... Bye! ****")
+        return 1
 
     # Start the client
     server_cfg = paim_cfg['server_cfg']
     try:
         print("Connecting to server...")
-        client = Client(server_cfg['host'], server_cfg['port'])
-    except RuntimeError as err:
-        sys.exit("[ClientError] {0}".format(err))
+        client = Client()
+    except OSError as err:
+        print(f"[SOCKET ERROR] {err}")
+        print("\n**** Ending program... Bye! ****")
+        return 2
 
     try:
+        addr = client.run(server_cfg['host'], server_cfg['port'])
+        print(f"[INFO] Connected to server with the address {addr[0]}:{addr[1]}")
+
+        # Load the simulator
         print("[INFO] Loading simulator...")
         res_vars, sim_multi = load_simulator(client)
 
@@ -182,44 +187,47 @@ def run_paim(config_file, checkpoint_load, debug):
         verbose = project_cfg['verbose']
 
         if verbose:
-            print_paim_summary(current_time, sim_multi, project_dir,
-                               project_cfg, optimizer_cfg, objectives,
-                               constraints, circuit_vars, checkpoint_load,
-                               debug)
+            print_paim_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_cfg,
+                               objectives, constraints, circuit_vars, checkpoint_load, debug)
 
         # Remove the units from the "circuit_vars" and from the "objectives"
         circuit_vars_tmp = {key: val[0] for key, val in circuit_vars.items()}
         objectives_tmp = {key: val[0] for key, val in objectives.items()}
 
         # Load the optimizer
-        paim = OptimizerNSGA2(
-            objectives_tmp, constraints, circuit_vars_tmp,
-            optimizer_cfg['pop_size'], optimizer_cfg['max_gen'], client,
-            optimizer_cfg['mut_prob'], optimizer_cfg['cx_prob'],
-            optimizer_cfg['mut_eta'], optimizer_cfg['cx_eta'], debug)
+        paim = OptimizerNSGA2(objectives_tmp, constraints, circuit_vars_tmp,
+                              optimizer_cfg['pop_size'], optimizer_cfg['max_gen'], client,
+                              optimizer_cfg['mut_prob'], optimizer_cfg['cx_prob'],
+                              optimizer_cfg['mut_eta'], optimizer_cfg['cx_eta'], debug)
 
         # Run the GA
-        fronts, logbook = paim.run_ga(checkpoint_fname, sim_multi,
-                                      checkpoint_load,
-                                      optimizer_cfg['checkpoint_freq'],
-                                      optimizer_cfg['sel_best'], verbose)
+        fronts, logbook = paim.run_ga(checkpoint_fname, sim_multi, checkpoint_load,
+                                      optimizer_cfg['checkpoint_freq'], optimizer_cfg['sel_best'],
+                                      verbose)
 
         # Save logbook pickled to file
         file.write_pickle(logbook_fname, logbook)
 
         # Print statistics
-        plt.plot_pareto_fronts(
-            fronts, circuit_vars, objectives, plot_fname=plot_fname)
+        print("Plotting the pareto fronts...")
+        plt.plot_pareto_fronts(fronts, circuit_vars, objectives, plot_fname=plot_fname)
 
         # End the optimizer
-        print("\nShutting down.")
         req = dict(type='info', data='exit')
         client.send_data(req)
 
-    except (RuntimeError, TypeError, ValueError) as err:
-        print(f"[Exit with the Error] {err}")
-
+    except ConnectionError as err:
+        print(f"[CONNECTION ERROR] {err}")
+        return 3
+    except (TypeError, ValueError) as err:
+        print(f"[TYPE/VALUE ERROR] {err}")
+        return 4
+    except KeyError as err:
+        print(f"[KEY ERROR] {err}")
+        return 5
     finally:
+        # NOTE: Even with the "return" in exception, it comes to "finally"
+        print("\n**** Closing socket and ending program... Bye! ****")
         client.close()  # Close the client socket
 
-    print("---- END OF CLIENT ----")
+    return 0

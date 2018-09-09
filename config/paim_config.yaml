@@ -1,6 +1,6 @@
 # Project configuration
 project_cfg:
-    project_name: teste1
+    project_name: benchmark-09Set2018
     project_path: /home/miguel/paim-teste
     checkpoint_path: checkpoint
     logbook_path: logbook
@@ -8,8 +8,8 @@ project_cfg:
     verbose: True
 # Optimizer configuration
 optimizer_cfg:
-    pop_size: 19
-    max_gen: 1
+    pop_size: 100
+    max_gen: 30
     mut_prob: 0.1
     cx_prob: 0.8
     mut_eta: 20

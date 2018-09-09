@@ -13,11 +13,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-
 """PAIM entry point."""
 
 import argparse
 import os.path
+import sys
 
 from paim import paim
 
@@ -68,19 +68,25 @@ class CustomFormatter(argparse.HelpFormatter):
 def main():
     """PAIM main function."""
     description = 'Python optimizer for circuit design and optimization using Cadence Virtuoso.'
-    parser = argparse.ArgumentParser(
-        description=description, formatter_class=CustomFormatter)
+    parser = argparse.ArgumentParser(description=description, formatter_class=CustomFormatter)
 
-    parser.add_argument('project_file', metavar='CFG',
-                        help='file with the optimizer parameters')
+    parser.add_argument('project_file', metavar='CFG', help='file with the optimizer parameters')
 
-    parser.add_argument('-c', '--checkpoint', metavar='FILE',
-                        dest='checkpoint_file', default=None,
-                        help='continue the optimization from a checkpoint file')
+    parser.add_argument(
+        '-c',
+        '--checkpoint',
+        metavar='FILE',
+        dest='checkpoint_file',
+        default=None,
+        help='continue the optimization from a checkpoint file')
 
-    parser.add_argument('-d', '--debug', dest='debug',
-                        default=False, action='store_true',
-                        help='run the program in debug mode')
+    parser.add_argument(
+        '-d',
+        '--debug',
+        dest='debug',
+        default=False,
+        action='store_true',
+        help='run the program in debug mode')
 
     args = parser.parse_args()
 
@@ -98,7 +104,7 @@ def main():
         return
 
     # Run the optimizer
-    paim.run_paim(project_file, checkpoint_file, debug)
+    sys.exit(paim.run_paim(project_file, checkpoint_file, debug))
 
 
 if __name__ == "__main__":
