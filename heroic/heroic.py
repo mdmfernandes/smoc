@@ -1,19 +1,19 @@
-# This file is part of PAIM
+# This file is part of HEROiC
 # Copyright (C) 2018 Miguel Fernandes
 #
-# PAIM is free software: you can redistribute it and/or modify
+# HEROiC is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PAIM is distributed in the hope that it will be useful,
+# HEROiC is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-"""PAIM main module."""
+"""HEROiC main module."""
 
 import os
 import time
@@ -56,7 +56,7 @@ def load_simulator(client):
     return data
 
 
-def print_paim_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_cfg,
+def print_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_cfg,
                        objectives, constraints, circuit_vars, checkpoint_load, debug):
     """Print a summary with the project, circuit, and optimizer configurations.
 
@@ -70,22 +70,22 @@ def print_paim_summary(current_time, sim_multi, project_dir, project_cfg, optimi
         constraints {dict} -- optimization constraints
         circuit_vars {dict} -- circuit design variables
         checkpoint_load {str|None} -- checkpoint file to load, if provided
-        debug {bool} -- PAIM running mode (debug mode if True)
+        debug {bool} -- running mode (debug mode if True)
     """
     running_mode = "debug" if debug else "normal"
     checkpoint_fname = checkpoint_load.split('/')[-1].split('.')[0] if checkpoint_load else "no"
 
     fname = f"{project_dir}/summary_{current_time}.txt"
 
-    summary = f"""******************************************************
-**** PAIM - Python Optimizer for Cadence Virtuoso ****
-****************************************************** 
+    summary = f"""*********************************************************
+**** HEROiC - Heuristic ciRcuit Optimzer for Cadence ****
+********************************************************* 
 * Running date and time: {current_time}              
 * Project name: {project_cfg['project_name']}            
 * Project path: {project_cfg['project_path']}        
 * Running mode (normal/debug): {running_mode}        
 * Running from checkpoint: {checkpoint_fname}        
-**************** Optimizer parameters ****************
+****************** Optimizer parameters *****************
 * Population size: {optimizer_cfg['pop_size']}
 * # of generations: {optimizer_cfg['max_gen']}
 * # of parallel simulations: {sim_multi}
@@ -93,16 +93,16 @@ def print_paim_summary(current_time, sim_multi, project_dir, project_cfg, optimi
 * Crossover probability: {optimizer_cfg['cx_prob']}
 * Mutation crouding degree: {optimizer_cfg['mut_eta']}
 * Crossover crouding degree: {optimizer_cfg['cx_eta']}
-*************** Optimization objectives **************\n"""
+**************** Optimization objectives ****************\n"""
     for key, val in objectives.items():
         summary += f"* {key}: {val[0]} [{val[1]}]\n"
-    summary += "************** Optimization constraints **************\n"
+    summary += "**************** Optimization constraints ***************\n"
     for key, val in constraints.items():
         summary += f"* {key}: min = {val[0]}, max = {val[1]}\n"
-    summary += "************** Circuit design variables **************\n"
+    summary += "**************** Circuit design variables ***************\n"
     for key, val in circuit_vars.items():
         summary += f"* {key}: min = {val[0][0]}, max = {val[0][1]} [{val[1]}]\n"
-    summary += "******************************************************\n"
+    summary += "*********************************************************\n"
 
     print(summary)
 
@@ -110,28 +110,28 @@ def print_paim_summary(current_time, sim_multi, project_dir, project_cfg, optimi
         f.write(summary)
 
 
-def run_paim(config_file, checkpoint_load, debug):
-    """Run PAIM.
+def run_heroic(config_file, checkpoint_load, debug):
+    """Run HEROiC.
 
     Arguments:
         config_file {str} -- path of configuration file
         checkpoint_load {str|None} -- checkpoint file to load, if provided
-        debug {bool} -- PAIM running mode (debug mode if True)
+        debug {bool} -- running mode (debug mode if True)
 
     Raises:
         ValueError -- if the circuit variables don't match with the variables provided
                       in the configuration file
     """
     # Read config file and load the configurations into variables
-    paim_cfg = file.read_yaml(config_file)
+    heroic_cfg = file.read_yaml(config_file)
 
-    if not paim_cfg:  # If config is not valid
+    if not heroic_cfg:  # If config is not valid
         print("[ERROR] Invalid file name or config...")
         print("\n**** Ending program... Bye! ****")
         return 1
 
     # Start the client
-    server_cfg = paim_cfg['server_cfg']
+    server_cfg = heroic_cfg['server_cfg']
     try:
         print("Connecting to server...")
         client = Client()
@@ -148,7 +148,7 @@ def run_paim(config_file, checkpoint_load, debug):
         print("[INFO] Loading simulator...")
         res_vars, sim_multi = load_simulator(client)
 
-        circuit_vars = paim_cfg['circuit_vars']
+        circuit_vars = heroic_cfg['circuit_vars']
         diff = set(circuit_vars.keys()) - set(res_vars.keys())
 
         if diff:  # If it's not empty (i.e. bool(diff) is True)
@@ -156,10 +156,10 @@ def run_paim(config_file, checkpoint_load, debug):
             raise ValueError(err)
 
         # Get the remaining configs
-        project_cfg = paim_cfg['project_cfg']
-        optimizer_cfg = paim_cfg['optimizer_cfg']
-        objectives = paim_cfg['objectives']
-        constraints = paim_cfg['constraints']
+        project_cfg = heroic_cfg['project_cfg']
+        optimizer_cfg = heroic_cfg['optimizer_cfg']
+        objectives = heroic_cfg['objectives']
+        constraints = heroic_cfg['constraints']
 
         # Get current date and time
         current_time = time.strftime("%Y%m%d_%H-%M", time.localtime())
@@ -187,7 +187,7 @@ def run_paim(config_file, checkpoint_load, debug):
         verbose = project_cfg['verbose']
 
         if verbose:
-            print_paim_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_cfg,
+            print_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_cfg,
                                objectives, constraints, circuit_vars, checkpoint_load, debug)
 
         # Remove the units from the "circuit_vars" and from the "objectives"
@@ -195,13 +195,13 @@ def run_paim(config_file, checkpoint_load, debug):
         objectives_tmp = {key: val[0] for key, val in objectives.items()}
 
         # Load the optimizer
-        paim = OptimizerNSGA2(objectives_tmp, constraints, circuit_vars_tmp,
+        heroic_ga = OptimizerNSGA2(objectives_tmp, constraints, circuit_vars_tmp,
                               optimizer_cfg['pop_size'], optimizer_cfg['max_gen'], client,
                               optimizer_cfg['mut_prob'], optimizer_cfg['cx_prob'],
                               optimizer_cfg['mut_eta'], optimizer_cfg['cx_eta'], debug)
 
         # Run the GA
-        fronts, logbook = paim.run_ga(checkpoint_fname, sim_multi, checkpoint_load,
+        fronts, logbook = heroic_ga.run_ga(checkpoint_fname, sim_multi, checkpoint_load,
                                       optimizer_cfg['checkpoint_freq'], optimizer_cfg['sel_best'],
                                       verbose)
 
@@ -209,7 +209,7 @@ def run_paim(config_file, checkpoint_load, debug):
         file.write_pickle(logbook_fname, logbook)
 
         # Print statistics
-        print("Plotting the pareto fronts...")
+        print("[INFO] Plotting the pareto fronts...")
         plt.plot_pareto_fronts(fronts, circuit_vars, objectives, plot_fname=plot_fname)
 
         # End the optimizer

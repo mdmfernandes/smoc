@@ -8,7 +8,7 @@ ocnxlRun( ?mode 'sweepsAndCorners ?nominalCornerEnabled t ?allCornersEnabled nil
 
 ;====================== Print to file ==========================================
 ; Get the number of simulations from an environment variable
-n_sim = getShellEnvVar("PAIM_N_SIM")
+n_sim = getShellEnvVar("HEROIC_N_SIM")
 n_sim = atoi(n_sim)
 
 for( i 1 n_sim   

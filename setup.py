@@ -1,15 +1,15 @@
 #!/usr/bin/env python
-# This file is part of PAIM
+# This file is part of HEROiC
 # Copyright (C) 2018 Miguel Fernandes
 #
-# PAIM is free software: you can redistribute it and/or modify
+# HEROiC is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PAIM is distributed in the hope that it will be useful,
+# HEROiC is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
@@ -20,9 +20,9 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name='paim',
+    name='HEROiC',
     version='0.1.0',
-    description='Python optimizer for Cadence Virtuoso',
+    description='Heuristic ciRcuit Optimzer for Cadence',
     long_description=long_description,
     long_description_content_type="text/markdown",
     classifiers=[
@@ -36,11 +36,11 @@ setup(
     ],
     author='Miguel Fernandes',
     author_email='mdm.fernandes@gmail.com',
-    url='https://github.com/mdmfernandes/paim',
+    url='https://github.com/mdmfernandes/heroic',
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'paim = paim.__main__:main'
+            'heroic = heroic.__main__:main'
         ]
     }
 )

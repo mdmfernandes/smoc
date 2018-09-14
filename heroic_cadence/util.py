@@ -1,19 +1,18 @@
-# This file is part of PAIM
+# This file is part of HEROiC
 # Copyright (C) 2018 Miguel Fernandes
 #
-# PAIM is free software: you can redistribute it and/or modify
+# HEROiC is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PAIM is distributed in the hope that it will be useful,
+# HEROiC is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-
 """Helpers to handle data."""
 
 import re
@@ -51,12 +50,12 @@ def get_vars_from_file(fname):
         content = f.read()
 
     for match in re.finditer(pattern, content):
-        try:    # try to convert value to float
+        try:  # try to convert value to float
             value = float(match.group('value'))
         except ValueError:
             # If fails, replace the prefixes by the respective exponents
-            value = float(reduce((lambda a, kv: a.replace(*kv)),
-                                 prefix_dict.items(), match.group('value')))
+            value = float(reduce((lambda a, kv: a.replace(*kv)), prefix_dict.items(),
+                                 match.group('value')))
 
         # Save to dict
         variables[match.group('param')] = value
@@ -75,7 +74,7 @@ def store_vars_in_file(variables, fname):
 
         for idx, var in enumerate(variables):
             # Write the header of the correspondent test
-            f.write("ocnxlSelectTest(\"test:{0}\")\n".format(idx+1))
+            f.write("ocnxlSelectTest(\"test:{0}\")\n".format(idx + 1))
 
             # Iterate over the dictionary and save variables to file
             for key, val in var.items():
@@ -111,7 +110,7 @@ def get_results_from_file(fname):
 
         results[key] = val  # Save to dict
 
-    results_list.append(results)    # Append the last dict
+    results_list.append(results)  # Append the last dict
 
     return results_list
 

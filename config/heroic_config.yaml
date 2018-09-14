@@ -1,7 +1,7 @@
 # Project configuration
 project_cfg:
     project_name: benchmark-09Set2018
-    project_path: /home/miguel/paim-teste
+    project_path: /home/miguel/heroic-teste
     checkpoint_path: checkpoint
     logbook_path: logbook
     plot_path: plot

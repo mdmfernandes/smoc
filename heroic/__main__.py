@@ -1,25 +1,25 @@
-# This file is part of PAIM
+# This file is part of HEROiC
 # Copyright (C) 2018 Miguel Fernandes
 #
-# PAIM is free software: you can redistribute it and/or modify
+# HEROiC is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PAIM is distributed in the hope that it will be useful,
+# HEROiC is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-"""PAIM entry point."""
+"""HEROiC entry point."""
 
 import argparse
 import os.path
 import sys
 
-from paim import paim
+from heroic import heroic
 
 
 class CustomFormatter(argparse.HelpFormatter):
@@ -66,7 +66,7 @@ class CustomFormatter(argparse.HelpFormatter):
 
 
 def main():
-    """PAIM main function."""
+    """HEROiC main function."""
     description = 'Python optimizer for circuit design and optimization using Cadence Virtuoso.'
     parser = argparse.ArgumentParser(description=description, formatter_class=CustomFormatter)
 
@@ -104,7 +104,7 @@ def main():
         return
 
     # Run the optimizer
-    sys.exit(paim.run_paim(project_file, checkpoint_file, debug))
+    sys.exit(heroic.run_heroic(project_file, checkpoint_file, debug))
 
 
 if __name__ == "__main__":

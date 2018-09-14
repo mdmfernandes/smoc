@@ -1,4 +1,6 @@
-# Python CAdence optIMizer (PAIM)
+# Heuristic ciRcuit Optimzer for Cadence (HEROiC)
+
+**HEROiC** is a heuristic circuit optimizer based on the NSGA-II genetic algorithm (GA) for Cadence Virtuoso, written in Python. The GA is implemented using the DEAP library (ADD REF!!!).
 
 Python optimizer for circuit design and optimization using Cadence Virtuoso
 

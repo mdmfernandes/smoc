@@ -1,14 +1,14 @@
-# This file is part of PAIM
+# This file is part of HEROiC
 # Copyright (C) 2018 Miguel Fernandes
 #
-# PAIM is free software: you can redistribute it and/or modify
+# HEROiC is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PAIM is distributed in the hope that it will be useful,
+# HEROiC is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
@@ -22,10 +22,10 @@ import util
 from interface.server import Server
 
 # Simulator files
-SIM_FILE = os.environ.get('PAIM_SCRIPT_DIR') + "/loadSimulator.ocn"
-RUN_FILE = os.environ.get('PAIM_SCRIPT_DIR') + "/run.ocn"
-VAR_FILE = os.environ.get('PAIM_SCRIPT_DIR') + '/vars.ocn'
-OUT_FILE = os.environ.get('PAIM_ROOT_DIR') + "/sim_res"
+SIM_FILE = os.environ.get('HEROIC_SCRIPT_DIR') + "/loadSimulator.ocn"
+RUN_FILE = os.environ.get('HEROIC_SCRIPT_DIR') + "/run.ocn"
+VAR_FILE = os.environ.get('HEROIC_SCRIPT_DIR') + '/vars.ocn'
+OUT_FILE = os.environ.get('HEROIC_ROOT_DIR') + "/sim_res"
 
 
 def process_skill_request(req):
@@ -110,8 +110,8 @@ def main():
         return 1
 
     code = 0    # Return code
-    host = os.environ.get('PAIM_CLIENT_ADDR')
-    port = int(os.environ.get('PAIM_CLIENT_PORT'))
+    host = os.environ.get('HEROIC_CLIENT_ADDR')
+    port = int(os.environ.get('HEROIC_CLIENT_PORT'))
     try:
         addr = server.run(host, port)
 

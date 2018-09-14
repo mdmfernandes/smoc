@@ -1,14 +1,14 @@
-; This file is part of PAIM
+; This file is part of HEROiC
 ; Copyright (C) 2018 Miguel Fernandes
 ;
-; PAIM is free software: you can redistribute it and/or modify
+; HEROiC is free software: you can redistribute it and/or modify
 ; it under the terms of the GNU General Public License as published by
 ; the Free Software Foundation, either version 3 of the License, or
 ; (at your option) any later version.
 ;
-; PAIM is distributed in the hope that it will be useful,
+; HEROiC is distributed in the hope that it will be useful,
 ; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ; GNU General Public License for more details.
 ;
 ; You should have received a copy of the GNU General Public License
@@ -32,7 +32,7 @@ procedure( loadSimulator(loadFile simMulti)
     load(loadFile)
     
     ; Set an environment variable with the number of parallel simulations
-    setShellEnvVar("PAIM_N_PARALLEL_SIM" simMulti)
+    setShellEnvVar("HEROIC_N_PARALLEL_SIM" simMulti)
 
     msg = "loadSimulator_OK"
 )
@@ -50,10 +50,10 @@ procedure( updateAndRun(runFile varFile resultFile numSim)
 
     ; Set a environment variable with the number of requested simulations
     sprintf(numSimStr "%d" numSim)   ; Convert to string
-    setShellEnvVar("PAIM_N_SIM" numSimStr)
+    setShellEnvVar("HEROIC_N_SIM" numSimStr)
 
     ; Get the max number of parallel simulations
-    maxSim = getShellEnvVar("PAIM_N_PARALLEL_SIM")
+    maxSim = getShellEnvVar("HEROIC_N_PARALLEL_SIM")
     maxSim = atoi(maxSim)   ;; Convert to integer
 
     ; Disable unecessary simulations

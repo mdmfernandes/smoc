@@ -100,8 +100,8 @@ ENV/
 # mypy
 .mypy_cache/
 
-# logs content
-logs/*
-
 # todo
 TODO_PROBLEMAS
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
