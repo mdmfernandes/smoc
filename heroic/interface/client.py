@@ -57,6 +57,10 @@ class Client:
         except OSError as err:
             raise ConnectionError(err)
 
+        # The next function calls don't need a try statement because if they
+        # have an exception the error will be caught in the function that
+        # calls this one
+
         # Send the local socket name to the server
         self.send_data(dict(type="info", data=self.socket.getsockname()))
 
@@ -66,7 +70,7 @@ class Client:
     def send_data(self, obj):
         """Send an object through a socket.
 
-        1 - Serialize the object in JSON and enconde the string as a bytes object;
+        1 - Serialize the object in JSON and encode the string as a bytes object;
         2 - pack the serialized object length in an unsigned int (I) [four bytes],
             and big-endian byte order (>) (this way the object size message has
             always the same size (four bytes));
@@ -106,7 +110,7 @@ class Client:
     def recv_data(self):
         """Receive an object through a socket.
 
-        1 - Receive the first four bytes of data, which contains the data lenght;
+        1 - Receive the first four bytes of data, which contains the data length;
         2 - Receive the data, serialized in JSON, and decode it;
         3 - Convert the received data in an object.
 

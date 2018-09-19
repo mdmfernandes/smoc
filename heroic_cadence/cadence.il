@@ -111,7 +111,7 @@ procedure( requestHandler(cid request)
         if( serverHasStarted <= 0 then
             if( request == "Python server has started!" then
                 serverHasStarted = 1
-                printf("[INFO] Cadence is connected to server!\n")
+                printf("[INFO] Cadence is connected to server! Waiting for a connection from the client...\n")
             else
                 printf("[INFO] Waiting for server... Message: %s\n" request)
             )

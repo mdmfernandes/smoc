@@ -21,7 +21,7 @@ gen: 30
 sim_multi: 8
 time: 4587.14s ~ 1h17m
 
-10-09-2018
+14-09-2018
 -Multi-simulações dinamicas
 -Progress bar
 - No verbose no Cadence
@@ -29,4 +29,4 @@ time: 4587.14s ~ 1h17m
 ind: 100
 gen: 30
 sim_multi: 8
-time: ??? ~ ???
+time: 4258 ~ ??? (não sei a seed) 11.(muito)s cada 8 simulaçoes

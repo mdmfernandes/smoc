@@ -1,12 +1,11 @@
-;====================== Open output file =======================================
+;====================== Open output file ======================
 out_path = getShellEnvVar("RESULT_FILE")
 outf = outfile(out_path "w")
 
-;====================== Run simulation =========================================
+;======================= Run command ==========================
 ocnxlRun( ?mode 'sweepsAndCorners ?nominalCornerEnabled t ?allCornersEnabled nil ?allSweepsEnabled nil ?verboseMode nil)
-; ?verboseMode nil
 
-;====================== Print to file ==========================================
+;====================== Print to file =========================
 ; Get the number of simulations from an environment variable
 n_sim = getShellEnvVar("HEROIC_N_SIM")
 n_sim = atoi(n_sim)
@@ -14,6 +13,7 @@ n_sim = atoi(n_sim)
 for( i 1 n_sim   
     sprintf(name "test:%d" i)
 
+    ; Modify from here
 	POWER = calcVal("POWER" name)
     GAIN = calcVal("GAIN" name)
     REG1 = calcVal("REG1" name)
@@ -27,7 +27,8 @@ for( i 1 n_sim
     fprintf( outf "%s\t%d\n", "REG2", REG2)
     fprintf( outf "%s\t%g\n", "GBW", GBW)
     fprintf( outf "%s\t%g\n", "OS", OS)	
+    ; Modify up to here
 )
 
-;====================== Close file =============================================
+;====================== Close output file =====================
 close(outf)

@@ -20,9 +20,9 @@ import copy
 import math
 import random
 import textwrap
+import time
 
 from deap import algorithms, base, creator, tools
-from profilehooks import timecall
 from tqdm import tqdm
 
 from ..util import file
@@ -94,13 +94,13 @@ class OptimizerNSGA2:
 
         toolbox = base.Toolbox()
 
-        # float gerado aleatoriamente
+        # random generated float
         toolbox.register("attr_float", self.uniform, bound_low, bound_up)
-        # Define individuo como a lista de floats (itera pelo "attr_float"
-        # e coloca o resultado no "creator.Individual")
+        # Define an individual as a list of floats (iterate over "att_float"
+        # and place the result in "creator.Individual")
         toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.attr_float)
-        # Define a população como uma lista de individuos (o nro de individuos
-        # só é definido quando se inicializa a pop)
+        # Define the population as a list of individuals (the # of individuals
+        # is only defined when the population is initialized)
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
         # operator for selecting individuals for breeding the next generation
@@ -112,7 +112,7 @@ class OptimizerNSGA2:
         ##self.toolbox.decorate("evaluate", (self.feasibility, 0, self.distance))
 
         # register the crossover operator
-        toolbox.register("mate", tools.cxSimulatedBinaryBounded, 
+        toolbox.register("mate", tools.cxSimulatedBinaryBounded,
                          low=bound_low, up=bound_up, eta=cx_eta)
 
         # register the mutation operator
@@ -216,7 +216,6 @@ class OptimizerNSGA2:
 
         return fitnesses
 
-    @timecall  # Returns the function running time
     def ga_mu_plus_lambda(self, mu, lambda_, sim_multi, checkpoint_load, checkpoint_fname,
                           checkpoint_freq, sel_best, verbose):
         """The (mu + lambda) evolutionary algorithm.
@@ -241,8 +240,8 @@ class OptimizerNSGA2:
         and "toolbox.evaluate" aliases to be registered in the toolbox.
 
         Arguments:
-            mu {float} -- number of individuals to select
-            lambda_ {int} -- number of children to produce
+            mu {float} -- number of individuals to select for the next generation
+            lambda_ {int} -- number of children to produce at each generation
             sim_multi {int} -- number of parallel simulations
             checkpoint_load {str or None} -- checkpoint file to load, if provided
             checkpoint_fname {str} -- name of the checkpoint file to save
@@ -386,7 +385,7 @@ class OptimizerNSGA2:
 
         return population, logbook
 
-    def run_ga(self, checkpoint_fname, sim_multi=1, checkpoint_load=None,
+    def run_ga(self, checkpoint_fname, mu=None, lambda_=None, sim_multi=1, checkpoint_load=None,
                checkpoint_freq=1, sel_best=5, verbose=True):
         """Wrapper for the "ga_mu_plus_lambda" function.
 
@@ -394,25 +393,38 @@ class OptimizerNSGA2:
             checkpoint_fname {str} -- name of the checkpoint file to save
 
         Keyword Arguments:
+            mu {int or None} -- number of individuals to select for the next gen (default: None)
+            lambda_ {int or None} -- number of children to produce at each gen (default: None)
             sim_multi {int} -- number of parallel simulations (default: 1)
             checkpoint_load {str or None} -- name of the checkpoint file to load,
                 if provided (default: None)
-            checkpoint_freq {int} -- checkpoint saving frequency (relative to gen) (default: 1)
+            checkpoint_freq {int} -- checkpoint saving frequency (gen per checkpoint) (default: 1)
             sel_best {int} -- number of best individuals to log at each generation (default: 5)
             verbose {bool} -- run in verbosity mode (default: True)
 
         Returns:
             tuple -- pareto fronts and the logbook of the evolution
         """
+        # Evaluate mu and lambda_
+        if mu is None:
+            mu = self.pop_size
+        if lambda_ is None:
+            lambda_ = self.pop_size
+
+        start_time = time.time()
+
         result, logbook = self.ga_mu_plus_lambda(
-            mu=self.pop_size,
-            lambda_=self.pop_size,
+            mu=mu,
+            lambda_=lambda_,
             sim_multi=sim_multi,
             checkpoint_load=checkpoint_load,
             checkpoint_fname=checkpoint_fname,
             checkpoint_freq=checkpoint_freq,
             sel_best=sel_best,
             verbose=verbose)
+
+        # ga_mu_plus_lambda execution time
+        print(f"Optimization total time: {time.time() - start_time:.3f} seconds\n")
 
         # Get the pareto fronts from the optimization results
         fronts = tools.emo.sortLogNondominated(result, len(result))

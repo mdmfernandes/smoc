@@ -67,8 +67,8 @@ class CustomFormatter(argparse.HelpFormatter):
 
 def main():
     """HEROiC main function."""
-    description = 'Python optimizer for circuit design and optimization using Cadence Virtuoso.'
-    parser = argparse.ArgumentParser(description=description, formatter_class=CustomFormatter)
+    description = 'HEROiC - Heuristic ciRcuit Optimizer for Cadence'
+    parser = argparse.ArgumentParser(description=description, formatter_class=CustomFormatter, prog='heroic')
 
     parser.add_argument('project_file', metavar='CFG', help='file with the optimizer parameters')
 

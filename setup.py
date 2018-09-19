@@ -24,7 +24,17 @@ setup(
     version='0.1.0',
     description='Heuristic ciRcuit Optimzer for Cadence',
     long_description=long_description,
-    long_description_content_type="text/markdown",
+    long_description_content_type='text/markdown',
+    author='Miguel Fernandes',
+    author_email='mdm.fernandes@gmail.com',
+    url='https://github.com/mdmfernandes/heroic',
+    packages=find_packages(),
+    keywords=[
+        'evolutionary algorithms', 'genetic algorithms', 'nsga-ii', 'circuit optimization',
+        'electronic design automation', 'cadence virtuoso'
+    ],
+    platforms=['any'],
+    license='GPLv3',
     classifiers=[
         'Environment :: Console',
         'Intended Audience :: Science/Research',
@@ -34,13 +44,16 @@ setup(
         'Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)',
         'Topic :: Software Development :: Genetic Algorithm',
     ],
-    author='Miguel Fernandes',
-    author_email='mdm.fernandes@gmail.com',
-    url='https://github.com/mdmfernandes/heroic',
-    packages=find_packages(),
     entry_points={
         'console_scripts': [
             'heroic = heroic.__main__:main'
         ]
-    }
+    },
+    python_requires='~=3.3',
+    install_requires=[
+        'deap>=1.2.2',
+        'bokeh>=0.13.0',
+        'tqdm>=4.25.0',
+        'pyyaml>=3.13'
+    ]
 )

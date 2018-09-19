@@ -87,12 +87,14 @@ def print_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_c
 * Running from checkpoint: {checkpoint_fname}        
 ****************** Optimizer parameters *****************
 * Population size: {optimizer_cfg['pop_size']}
+* # of individuals to select: {optimizer_cfg['mu']}
+* # of children to produce: {optimizer_cfg['lambda']}
 * # of generations: {optimizer_cfg['max_gen']}
 * # of parallel simulations: {sim_multi}
 * Mutation probability: {optimizer_cfg['mut_prob']}
 * Crossover probability: {optimizer_cfg['cx_prob']}
-* Mutation crouding degree: {optimizer_cfg['mut_eta']}
-* Crossover crouding degree: {optimizer_cfg['cx_eta']}
+* Mutation crowding degree: {optimizer_cfg['mut_eta']}
+* Crossover crowding degree: {optimizer_cfg['cx_eta']}
 **************** Optimization objectives ****************\n"""
     for key, val in objectives.items():
         summary += f"* {key}: {val[0]} [{val[1]}]\n"
@@ -167,11 +169,11 @@ def run_heroic(config_file, checkpoint_load, debug):
         # Define the checkpoint/logbook/plot file names
         project_dir = f"{project_cfg['project_path']}/{project_cfg['project_name']}"
         checkpoint_dir = project_dir + f"/{project_cfg['checkpoint_path']}"
-        checkpoint_fname = checkpoint_dir + f"/{current_time}.pickle"
+        checkpoint_fname = checkpoint_dir + f"/cp_{current_time}.pickle"
         logbook_dir = project_dir + f"/{project_cfg['logbook_path']}"
-        logbook_fname = logbook_dir + f"/{current_time}.pickle"
+        logbook_fname = logbook_dir + f"/lb_{current_time}.pickle"
         plot_dir = project_dir + f"/{project_cfg['plot_path']}"
-        plot_fname = plot_dir + f"/{current_time}.html"
+        plot_fname = plot_dir + f"/plt_{current_time}.html"
 
         # Create the required directories, if they do not exist
         if not os.path.exists(project_dir):
@@ -188,7 +190,7 @@ def run_heroic(config_file, checkpoint_load, debug):
 
         if verbose:
             print_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_cfg,
-                               objectives, constraints, circuit_vars, checkpoint_load, debug)
+                          objectives, constraints, circuit_vars, checkpoint_load, debug)
 
         # Remove the units from the "circuit_vars" and from the "objectives"
         circuit_vars_tmp = {key: val[0] for key, val in circuit_vars.items()}
@@ -196,14 +198,18 @@ def run_heroic(config_file, checkpoint_load, debug):
 
         # Load the optimizer
         heroic_ga = OptimizerNSGA2(objectives_tmp, constraints, circuit_vars_tmp,
-                              optimizer_cfg['pop_size'], optimizer_cfg['max_gen'], client,
-                              optimizer_cfg['mut_prob'], optimizer_cfg['cx_prob'],
-                              optimizer_cfg['mut_eta'], optimizer_cfg['cx_eta'], debug)
+                                   optimizer_cfg['pop_size'], optimizer_cfg['max_gen'], client,
+                                   optimizer_cfg['mut_prob'], optimizer_cfg['cx_prob'],
+                                   optimizer_cfg['mut_eta'], optimizer_cfg['cx_eta'], debug)
 
         # Run the GA
-        fronts, logbook = heroic_ga.run_ga(checkpoint_fname, sim_multi, checkpoint_load,
-                                      optimizer_cfg['checkpoint_freq'], optimizer_cfg['sel_best'],
-                                      verbose)
+        fronts, logbook = heroic_ga.run_ga(checkpoint_fname,
+                                           optimizer_cfg['mu'],
+                                           optimizer_cfg['lambda'],
+                                           sim_multi, checkpoint_load,
+                                           optimizer_cfg['checkpoint_freq'],
+                                           optimizer_cfg['sel_best'],
+                                           verbose)
 
         # Save logbook pickled to file
         file.write_pickle(logbook_fname, logbook)

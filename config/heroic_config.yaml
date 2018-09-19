@@ -9,14 +9,16 @@ project_cfg:
 # Optimizer configuration
 optimizer_cfg:
     pop_size: 100
-    max_gen: 30
+    mu: 100
+    lambda: 100
+    max_gen: 3
     mut_prob: 0.1
     cx_prob: 0.8
     mut_eta: 20
     cx_eta: 20
     sel_best: 5
     checkpoint_freq: 1
-# Optimizer objectives 
+# Optimization objectives 
 # Format: [<fitness weight>, <param units>]
 objectives:
     POWER: [-1.0, W]

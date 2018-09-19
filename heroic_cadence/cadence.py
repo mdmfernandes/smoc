@@ -109,9 +109,9 @@ def main():
         server.send_warn("[SOCKET ERROR] {0}".format(err))
         return 1
 
-    code = 0    # Return code
     host = os.environ.get('HEROIC_CLIENT_ADDR')
     port = int(os.environ.get('HEROIC_CLIENT_PORT'))
+
     try:
         addr = server.run(host, port)
 
@@ -119,6 +119,12 @@ def main():
         log = "Connected to client with address {0}:{1}".format(addr[0], addr[1])
         server.send_skill(log)
 
+    except IOError as err:  # NOTE: "ConnectionError" nao existe no Python 2 -_-
+        server.send_warn("[CONNECTION ERROR] {0}".format(err))
+        return 1
+
+    code = 0    # Return code
+    try:
         while True:
             # Wait for a client request
             req = server.recv_data()
@@ -140,13 +146,13 @@ def main():
 
     except IOError as err:  # NOTE: "ConnectionError" nao existe no Python 2 -_-
         server.send_warn("[CONNECTION ERROR] {0}".format(err))
-        code = 1
+        code = 2
     except TypeError as err:
         server.send_warn("[TYPE ERROR] {0}".format(err))
-        code = 2
+        code = 3
     except KeyError as err:
         server.send_warn("[KEY ERROR] {0}".format(err))
-        code = 3
+        code = 4
     finally:
         server.close(code)
 
