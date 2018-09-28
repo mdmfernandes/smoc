@@ -16,7 +16,7 @@
 """Helpers to plot graphics."""
 
 from bokeh.models import PrintfTickFormatter
-from bokeh.palettes import Category20
+from bokeh.palettes import viridis
 from bokeh.plotting import ColumnDataSource, figure, output_file, show
 
 from .text_format import eng_string
@@ -41,7 +41,7 @@ def plot_pareto_fronts(fronts, circuit_vars, objectives, plot_fname):
     # each front = one color
     num_colors = max(3, len(fronts))
     try:
-        colors = Category20[num_colors]
+        colors = viridis(num_colors)
     except KeyError as err:
         raise KeyError(f"The colors vector doesn't support {err} colors.")
 

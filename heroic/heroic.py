@@ -56,7 +56,7 @@ def load_simulator(client):
     return data
 
 
-def print_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_cfg,
+def print_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_cfg, server_cfg,
                        objectives, constraints, circuit_vars, checkpoint_load, debug):
     """Print a summary with the project, circuit, and optimizer configurations.
 
@@ -66,6 +66,7 @@ def print_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_c
         project_dir {str} -- project directory
         project_cfg {dict} -- project configuration parameters
         optimizer_cfg {dict} -- optimizer configuration parameters
+        server_cfg {dict} -- server configuration parameters
         objectives {dict} -- optimization objectives
         constraints {dict} -- optimization constraints
         circuit_vars {dict} -- circuit design variables
@@ -104,6 +105,9 @@ def print_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_c
     summary += "**************** Circuit design variables ***************\n"
     for key, val in circuit_vars.items():
         summary += f"* {key}: min = {val[0][0]}, max = {val[0][1]} [{val[1]}]\n"
+    summary += "******************** Server parameters ******************\n"
+    summary += f"* Host: {server_cfg['host']}\n"
+    summary += f"* Port: {server_cfg['port']}\n"
     summary += "*********************************************************\n"
 
     print(summary)
@@ -124,6 +128,14 @@ def run_heroic(config_file, checkpoint_load, debug):
         ValueError -- if the circuit variables don't match with the variables provided
                       in the configuration file
     """
+    # Print license
+    print("\nHEROiC  Copyright (C) 2018  Miguel Fernandes")
+    print("This program comes with ABSOLUTELY NO WARRANTY.")
+    print("This is free software, and you are welcome to redistribute it under the terms")
+    print("of the GNU General Public License as published by the Free Software Foundation,")
+    print("either version 3 of the License, or (at your option) any later version.")
+    print("For more information, see <http://www.gnu.org/licenses/>\n")
+    
     # Read config file and load the configurations into variables
     heroic_cfg = file.read_yaml(config_file)
 
@@ -141,6 +153,8 @@ def run_heroic(config_file, checkpoint_load, debug):
         print(f"[SOCKET ERROR] {err}")
         print("\n**** Ending program... Bye! ****")
         return 2
+
+    return_code = 0
 
     try:
         print("Connecting to server...")
@@ -190,8 +204,9 @@ def run_heroic(config_file, checkpoint_load, debug):
         verbose = project_cfg['verbose']
 
         if verbose:
-            print_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_cfg,
-                          objectives, constraints, circuit_vars, checkpoint_load, debug)
+            print_summary(current_time, sim_multi, project_dir, project_cfg,
+                          optimizer_cfg, server_cfg, objectives, constraints,
+                          circuit_vars, checkpoint_load, debug)
 
         # Remove the units from the "circuit_vars" and from the "objectives"
         circuit_vars_tmp = {key: val[0] for key, val in circuit_vars.items()}
@@ -212,6 +227,12 @@ def run_heroic(config_file, checkpoint_load, debug):
                                            optimizer_cfg['sel_best'],
                                            verbose)
 
+        # End the connection with the server
+        print("[INFO] Ending connection with the server")
+        req = dict(type='info', data='exit')
+        client.send_data(req)
+        client.close()  # Close the client socket
+
         # Save logbook pickled to file
         file.write_pickle(logbook_fname, logbook)
 
@@ -219,22 +240,19 @@ def run_heroic(config_file, checkpoint_load, debug):
         print("[INFO] Plotting the pareto fronts...")
         plt.plot_pareto_fronts(fronts, circuit_vars, objectives, plot_fname=plot_fname)
 
-        # End the optimizer
-        req = dict(type='info', data='exit')
-        client.send_data(req)
-
     except ConnectionError as err:
         print(f"[CONNECTION ERROR] {err}")
-        return 3
+        return_code = 3
     except (TypeError, ValueError) as err:
         print(f"[TYPE/VALUE ERROR] {err}")
-        return 4
+        return_code = 4
     except KeyError as err:
         print(f"[KEY ERROR] {err}")
-        return 5
-    finally:
-        # NOTE: Even with the "return" in exception, it comes to "finally"
-        print("\n**** Closing socket and ending program... Bye! ****")
-        client.close()  # Close the client socket
+        return_code = 5
 
-    return 0
+    # If there was an exception (return_code != 0) it's necessary to close the socket
+    if return_code:
+        client.close()
+
+    print("\n**** Closing socket and ending program... Bye! ****")
+    return return_code

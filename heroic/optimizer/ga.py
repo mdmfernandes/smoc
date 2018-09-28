@@ -267,11 +267,9 @@ class OptimizerNSGA2:
             start_gen = cp["generation"] + 1
             logbook = cp["logbook"]
             random.setstate(cp["rnd_state"])
-            print(
-                textwrap.dedent(f"""
-                ======== Running from a checkpoint ========
-                -- Population size: {len(population)}
-                -- Current generation: {start_gen}"""))
+            print(f"""======== Running from a checkpoint ========
+-- Population size: {len(population)}
+-- Current generation: {start_gen}""")
 
         else:  # Create the population
             population = self.toolbox.population(n=self.pop_size)
@@ -294,11 +292,11 @@ class OptimizerNSGA2:
                 invalid_inds_multi.append(invalid_inds[(sim_multi * idx):(sim_multi * (1 + idx))])
 
             if verbose:
-                msg = f"\n======== Evaluating the initial population ({len(invalid_inds)} inds)"
+                msg = f"======== Evaluating the initial population ({len(invalid_inds)} inds)"
                 msg += f"  | {sim_multi} evals/run (max) ========"
                 print(msg)
             else:
-                print("\n[INFO] Evaluating the initial population")
+                print("[INFO] Evaluating the initial population")
 
             # Evaluate the individuals with an invalid fitness
             # Fitnesses are the concatenation (sum) of all the fitnesses returned by "eval_circuit"

@@ -97,16 +97,15 @@ def main():
 
     # Check if project_file exists
     if not os.path.isfile(project_file):
-        print("[ERROR] Invalid CONFIG file path. Exiting the program...")
-        return
+        print("[ERROR] Invalid CONFIG file. Exiting the program...")
+        return 11
     # Check if checkpoint file exists
     if checkpoint_file and not os.path.isfile(checkpoint_file):
-        print("[ERROR] Invalid CHECKPOINT file path. Exiting the program...")
-        return
+        print("[ERROR] Invalid CHECKPOINT file. Exiting the program...")
+        return 12
 
     # Run the optimizer
-    sys.exit(heroic.run_heroic(project_file, checkpoint_file, debug))
-
+    return heroic.run_heroic(project_file, checkpoint_file, debug)
 
 if __name__ == "__main__":
     sys.exit(main())
