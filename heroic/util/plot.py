@@ -16,7 +16,7 @@
 """Helpers to plot graphics."""
 
 from bokeh.models import PrintfTickFormatter
-from bokeh.palettes import mpl
+from bokeh.palettes import Category20
 from bokeh.plotting import ColumnDataSource, figure, output_file, show
 
 from .text_format import eng_string
@@ -40,7 +40,10 @@ def plot_pareto_fronts(fronts, circuit_vars, objectives, plot_fname):
     # Define the colors to use in the graphic, according to the number of pareto fronts
     # each front = one color
     num_colors = max(3, len(fronts))
-    colors = mpl['Viridis'][num_colors]
+    try:
+        colors = Category20[num_colors]
+    except KeyError as err:
+        raise KeyError(f"The colors vector doesn't support {err} colors.")
 
     # Add the Fitnesses to the tooltips
     tooltips = [(fit, f"@{fit}") for fit in fit_names]
