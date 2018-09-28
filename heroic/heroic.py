@@ -27,7 +27,7 @@ from .util import plot as plt
 def load_simulator(client):
     """Load the Cadence simulator before starting the optimization.
 
-    This taks is performed once per run (contrary to the Cadence ADE) that
+    This task is performed once per run (contrary to the Cadence ADE) that
     loads the simulator everytime we run a simulation, which is very
     inefficient.
 
@@ -38,7 +38,7 @@ def load_simulator(client):
         TypeError -- if the server response is not from the expected type
 
     Returns:
-        dict -- circuit variables
+        dict -- circuit design variables
     """
     req = dict(type='loadSimulator', data=None)
     client.send_data(req)
@@ -135,7 +135,7 @@ def run_heroic(config_file, checkpoint_load, debug):
     # Start the client
     server_cfg = heroic_cfg['server_cfg']
     try:
-        print("Connecting to server...")
+        print("Starting client...")
         client = Client()
     except OSError as err:
         print(f"[SOCKET ERROR] {err}")
@@ -143,6 +143,7 @@ def run_heroic(config_file, checkpoint_load, debug):
         return 2
 
     try:
+        print("Connecting to server...")
         addr = client.run(server_cfg['host'], server_cfg['port'])
         print(f"[INFO] Connected to server with the address {addr[0]}:{addr[1]}")
 

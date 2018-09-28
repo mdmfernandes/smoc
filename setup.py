@@ -42,14 +42,14 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3.6',
         'Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)',
-        'Topic :: Software Development :: Genetic Algorithm',
+        'Topic :: Software Development :: Genetic Algorithm'
     ],
     entry_points={
         'console_scripts': [
             'heroic = heroic.__main__:main'
         ]
     },
-    python_requires='~=3.3',
+    python_requires='>=3.6',
     install_requires=[
         'deap>=1.2.2',
         'bokeh>=0.13.0',

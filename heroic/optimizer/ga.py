@@ -175,7 +175,7 @@ class OptimizerNSGA2:
         try:
             res_type = res['type']
             sim_res = res['data']
-        except KeyError as err:  # if the key does not exist
+        except KeyError as err:
             print(f"Error: {err}")
 
         if res_type != 'updateAndRun':
@@ -203,7 +203,7 @@ class OptimizerNSGA2:
             if self.constraints:
                 # Handling the contraints
                 # TODO: Just a test... se não estiverem na saturação
-                if sim_res_ind["REG1"] != 2 or sim_res_ind["REG2"] != 2:
+                if sim_res_ind["SINAD"] < 60:
                     penalty = 0.01
 
             # Multiply the fitness by the penalty

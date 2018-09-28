@@ -68,7 +68,8 @@ class CustomFormatter(argparse.HelpFormatter):
 def main():
     """HEROiC main function."""
     description = 'HEROiC - Heuristic ciRcuit Optimizer for Cadence'
-    parser = argparse.ArgumentParser(description=description, formatter_class=CustomFormatter, prog='heroic')
+    parser = argparse.ArgumentParser(description=description, formatter_class=CustomFormatter,
+                                     prog='heroic')
 
     parser.add_argument('project_file', metavar='CFG', help='file with the optimizer parameters')
 
@@ -108,4 +109,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
