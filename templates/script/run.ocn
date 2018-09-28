@@ -7,7 +7,7 @@ outf = outfile(out_path "w")
 
 ;====================== Print to file =========================
 ; Get the number of parallel simulations from an environment variable
-n_sim = getShellEnvVar("HEROIC_N_SIM")
+n_sim = getShellEnvVar("SMOC_N_SIM")
 n_sim = atoi(n_sim)
 
 for( i 1 n_sim   
