@@ -22,10 +22,11 @@ import util
 from interface.server import Server
 
 # Simulator files
-SIM_FILE = os.environ.get('HEROIC_SCRIPT_DIR') + "/loadSimulator.ocn"
-RUN_FILE = os.environ.get('HEROIC_SCRIPT_DIR') + "/run.ocn"
-VAR_FILE = os.environ.get('HEROIC_SCRIPT_DIR') + '/vars.ocn'
-OUT_FILE = os.environ.get('HEROIC_ROOT_DIR') + "/sim_res"
+SIM_FILE = os.environ.get('HEROIC_LOAD_FILE')
+RUN_FILE = os.environ.get('HEROIC_RUN_FILE')
+VAR_FILE = os.environ.get('HEROIC_VARS_FILE')
+ROOT_DIR = os.environ.get('HEROIC_ROOT_DIR')
+OUT_FILE = os.environ.get('HEROIC_RESULTS_FILE')
 
 
 def process_skill_request(req):
@@ -55,7 +56,7 @@ def process_skill_request(req):
 
     elif type_ == 'loadSimulator':
         sim_multi = util.get_parallel_simulations(SIM_FILE)
-        res = 'loadSimulator( "{0}" "{1}")'.format(SIM_FILE, sim_multi)
+        res = 'loadSimulator("{0}" "{1}" "{2}")'.format(ROOT_DIR, SIM_FILE, sim_multi)
 
     elif type_ == 'updateAndRun':
         # Store circuit variables in file
@@ -153,9 +154,8 @@ def main():
     except KeyError as err:
         server.send_warn("[KEY ERROR] {0}".format(err))
         code = 4
-    finally:
-        server.close(code)
-
+        
+    server.close(code)
     return code
 
 
