@@ -1,12 +1,12 @@
+;======================= Run command ==========================
+ocnxlRun( ?mode 'sweepsAndCorners ?nominalCornerEnabled t ?allCornersEnabled nil ?allSweepsEnabled nil ?verboseMode nil)
+
 ;====================== Open output file ======================
 out_path = getShellEnvVar("RESULT_FILE")
 outf = outfile(out_path "w")
 
-;======================= Run command ==========================
-ocnxlRun( ?mode 'sweepsAndCorners ?nominalCornerEnabled t ?allCornersEnabled nil ?allSweepsEnabled nil ?verboseMode nil)
-
 ;====================== Print to file =========================
-; Get the number of simulations from an environment variable
+; Get the number of parallel simulations from an environment variable
 n_sim = getShellEnvVar("HEROIC_N_SIM")
 n_sim = atoi(n_sim)
 

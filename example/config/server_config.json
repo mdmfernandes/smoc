@@ -1,0 +1,15 @@
+{
+    "project_cfg": {
+        "project_name": "SDM2_VCO",
+        "project_path": "/home/mdm.fernandes/Projects",
+        "script_path": "script",
+        "loadSimulator_file": "loadSimulator.ocn",
+        "runSimulation_fie": "run.ocn",
+        "variables_file": "vars.ocn",
+        "results_file": "sim_res"
+    },
+    "client_cfg": {
+        "host": "localhost",
+        "port": 3000
+    }
+}
