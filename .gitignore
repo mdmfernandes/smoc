@@ -99,9 +99,3 @@ ENV/
 
 # mypy
 .mypy_cache/
-
-# todo
-TODO_PROBLEMAS
-
-# Jupyter notebook checkpoints
-.ipynb_checkpoints/
