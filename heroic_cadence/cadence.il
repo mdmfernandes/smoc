@@ -18,16 +18,21 @@
 ;; Simulation related functions     ;;
 ;;  - Load the simulator            ;;
 ;;  - Update design variables       ;;
-;;  - Run simulaions                ;;
+;;  - Run simulations               ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Load the simulator by running the provided file, and create an environment
 ;; variable with the max number of parallel simulaions that can be performed.
 ;; 
+;; @param {string} runDir - directory from where the scripts are runned. The
+;; design environment stores the log files in this directory.
 ;; @param {string} loadFile - name of file to load the simulator from
-;; @param {number} sim_multi - number of parallel simulations
+;; @param {number} simMulti - number of parallel simulations
 ;;
-procedure( loadSimulator(loadFile simMulti)
+procedure( loadSimulator(runDir loadFile simMulti)
+    ; Change he running directory
+    cd(runDir)
+
     ; Load the simulator
     load(loadFile)
     
@@ -111,7 +116,7 @@ procedure( requestHandler(cid request)
         if( serverHasStarted <= 0 then
             if( request == "Python server has started!" then
                 serverHasStarted = 1
-                printf("[INFO] Cadence is connected to server! Waiting for a connection from the client...\n")
+                printf("[INFO] Cadence is talking to server! Waiting for a client connection...\n")
             else
                 printf("[INFO] Waiting for server... Message: %s\n" request)
             )
@@ -127,7 +132,7 @@ procedure( requestHandler(cid request)
                     sprintf(resultStr "%s\n" car(nthelem(5 errset.errset)))
                 )
                 sendData(cid resultStr)
-            else
+            else    ; if the request is a message, prints that message
                 printf("[INFOs] %s\n" request)
             )
         )
