@@ -1,12 +1,12 @@
-; This file is part of HEROiC
+; This file is part of SMOC
 ; Copyright (C) 2018 Miguel Fernandes
 ;
-; HEROiC is free software: you can redistribute it and/or modify
+; SMOC is free software: you can redistribute it and/or modify
 ; it under the terms of the GNU General Public License as published by
 ; the Free Software Foundation, either version 3 of the License, or
 ; (at your option) any later version.
 ;
-; HEROiC is distributed in the hope that it will be useful,
+; SMOC is distributed in the hope that it will be useful,
 ; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ; GNU General Public License for more details.
@@ -37,7 +37,7 @@ procedure( loadSimulator(runDir loadFile simMulti)
     load(loadFile)
     
     ; Set an environment variable with the number of parallel simulations
-    setShellEnvVar("HEROIC_N_PARALLEL_SIM" simMulti)
+    setShellEnvVar("SMOC_N_PARALLEL_SIM" simMulti)
 
     msg = "loadSimulator_OK"
 )
@@ -55,10 +55,10 @@ procedure( updateAndRun(runFile varFile resultFile numSim)
 
     ; Set a environment variable with the number of requested simulations
     sprintf(numSimStr "%d" numSim)   ; Convert to string
-    setShellEnvVar("HEROIC_N_SIM" numSimStr)
+    setShellEnvVar("SMOC_N_SIM" numSimStr)
 
     ; Get the max number of parallel simulations
-    maxSim = getShellEnvVar("HEROIC_N_PARALLEL_SIM")
+    maxSim = getShellEnvVar("SMOC_N_PARALLEL_SIM")
     maxSim = atoi(maxSim)   ;; Convert to integer
 
     ; Disable unecessary simulations

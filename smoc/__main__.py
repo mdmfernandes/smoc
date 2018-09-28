@@ -1,25 +1,25 @@
-# This file is part of HEROiC
-# Copyright (C) 2018 Miguel Fernandes
+# This file is part of SMOC
+# Copyright (C) 2018  Miguel Fernandes
 #
-# HEROiC is free software: you can redistribute it and/or modify
+# SMOC is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# HEROiC is distributed in the hope that it will be useful,
+# SMOC is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-"""HEROiC entry point."""
+"""SMOC entry point."""
 
 import argparse
 import os.path
 import sys
 
-from heroic import heroic
+from smoc import smoc
 
 
 class CustomFormatter(argparse.HelpFormatter):
@@ -66,10 +66,10 @@ class CustomFormatter(argparse.HelpFormatter):
 
 
 def main():
-    """HEROiC main function."""
-    description = 'HEROiC - Heuristic ciRcuit Optimizer for Cadence'
+    """SMOC main function."""
+    description = 'SMOC - A Stochastic Multi-objective Optimizer for Cadence Virtuoso'
     parser = argparse.ArgumentParser(description=description, formatter_class=CustomFormatter,
-                                     prog='heroic')
+                                     prog='smoc')
 
     parser.add_argument('project_file', metavar='CFG', help='file with the optimizer parameters')
 
@@ -105,7 +105,7 @@ def main():
         return 12
 
     # Run the optimizer
-    return heroic.run_heroic(project_file, checkpoint_file, debug)
+    return smoc.run_smoc(project_file, checkpoint_file, debug)
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -1,21 +1,31 @@
-# Heuristic ciRcuit Optimzer for Cadence (HEROiC)
+# A Stochastic Multi-objective Optimizer for Cadence Virtuoso (SMOC)
 
-**HEROiC** is a heuristic circuit optimizer based on the NSGA-II genetic algorithm (GA) for Cadence Virtuoso, written in Python. The GA is implemented using the DEAP library (ADD REF!!!).
+---
+layout: home
+title: Project Home
+---
 
-Python optimizer for circuit design and optimization using Cadence Virtuoso
+**SMOC** is a stochastic circuit optimizer based on the NSGA-II genetic algorithm (GA) for Cadence Virtuoso, written in Python. The GA is implemented using the [DEAP library][DEAP].
+
+## Prerequisites
+
+Aliquam hendrerit, libero ut ultricies euismod, ligula risus aliquet sapien, a consectetur ex est a leo.
+
+### Python versions
+
+Aliquam hendrerit, libero ut ultricies euismod, ligula risus aliquet sapien, a consectetur ex est a leo. Sed dapibus nisi dui, nec vulputate elit imperdiet vitae. Sed congue varius erat non accumsan. Vivamus convallis dolor massa, ut ornare tellus sodales ac. Sed at maximus erat, eu rhoncus elit. Integer gravida aliquam aliquet. Sed a malesuada elit. Quisque a sodales tellus. Vestibulum mattis erat nec velit pellentesque sodales.
+
+### Required packages
+
+Aliquam hendrerit, libero ut ultricies euismod, ligula risus aliquet sapien, a consectetur ex est a leo. Sed dapibus nisi dui, nec vulputate elit imperdiet vitae. Sed congue varius erat non accumsan. Vivamus convallis dolor massa, ut ornare tellus sodales ac. Sed at maximus erat, eu rhoncus elit. Integer gravida aliquam aliquet. Sed a malesuada elit. Quisque a sodales tellus. Vestibulum mattis erat nec velit pellentesque sodales.
 
 ## Usage
 
-1. Place the packages **cadence/** and **server/** in the machine that runs Cadence (i.e. the **server**).
-2. Place the package **opycad/** in your computer.
-3. Connect your computer to **server** through ssh using local port forwarding for the port specified in the file *config.yaml*. Ex:
+Duis id libero vitae orci tincidunt consectetur. Cras scelerisque arcu eget libero dictum commodo. Pellentesque hendrerit massa quis magna euismod, cursus congue enim suscipit. Aenean condimentum maximus blandit. Etiam eu ligula eget massa efficitur ornare. Aenean eget libero lacus. Aenean sit amet lacus elit. Nullam nisi eros, lobortis in hendrerit quis, efficitur sed purus. In malesuada nisl at malesuada viverra.
 
-```Shell script
-ssh -L LOCAL_PORT:localhost:HOST_PORT user@SERVER_IP
-```
+## Example
 
-4. Run Cadence, in the **server**, by executing the script *start_cadence.sh* (it should have execution permissions).
-5. Run *main.py* in your computer.
+CHECK TUTORIAL
 
 ## Contributing
 
@@ -27,20 +37,18 @@ ssh -L LOCAL_PORT:localhost:HOST_PORT user@SERVER_IP
 
 ## Versioning
 
-TODO: Write history
+We use [SemVer](http://semver.org/){:target="_blank"} for versioning. For the versions available, see the [releases on the project repository](https://github.com/mdmfernandes/smoc/releases/){:target="_blank"}.
 
 ## Authors
 
-* **Miguel Fernandes** - *Initial work* - [mdmfernandes](https://github.com/mdmfernandes)
-
-## Credits
-
-TODO: Write credits
+* **Miguel Fernandes** - *Initial work* - [mdmfernandes](https://github.com/mdmfernandes){:target="_blank"}
 
 ## License
 
-TODO: Write license
+This project is licensed under the GPLv3 License - see the project [LICENSE](https://github.com/mdmfernandes/smoc/blob/master/LICENSE){:target="_blank"} file for details.
 
 ## Acknowledgments
 
-TODO: Write acknowledgments
+TODO: Write acknowledgments.
+
+[DEAP]: https://github.com/deap/deap

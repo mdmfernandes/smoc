@@ -1,12 +1,12 @@
-# This file is part of HEROiC
-# Copyright (C) 2018 Miguel Fernandes
+# This file is part of SMOC
+# Copyright (C) 2018  Miguel Fernandes
 #
-# HEROiC is free software: you can redistribute it and/or modify
+# SMOC is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# HEROiC is distributed in the hope that it will be useful,
+# SMOC is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
@@ -22,11 +22,14 @@ import util
 from interface.server import Server
 
 # Simulator files
-SIM_FILE = os.environ.get('HEROIC_LOAD_FILE')
-RUN_FILE = os.environ.get('HEROIC_RUN_FILE')
-VAR_FILE = os.environ.get('HEROIC_VARS_FILE')
-ROOT_DIR = os.environ.get('HEROIC_ROOT_DIR')
-OUT_FILE = os.environ.get('HEROIC_RESULTS_FILE')
+SIM_FILE = os.environ.get('SMOC_LOAD_FILE')
+RUN_FILE = os.environ.get('SMOC_RUN_FILE')
+VAR_FILE = os.environ.get('SMOC_VARS_FILE')
+ROOT_DIR = os.environ.get('SMOC_ROOT_DIR')
+OUT_FILE = os.environ.get('SMOC_RESULTS_FILE')
+# Client config
+HOST = os.environ.get('SMOC_CLIENT_ADDR')
+PORT = int(os.environ.get('SMOC_CLIENT_PORT'))
 
 
 def process_skill_request(req):
@@ -110,11 +113,8 @@ def main():
         server.send_warn("[SOCKET ERROR] {0}".format(err))
         return 1
 
-    host = os.environ.get('HEROIC_CLIENT_ADDR')
-    port = int(os.environ.get('HEROIC_CLIENT_PORT'))
-
     try:
-        addr = server.run(host, port)
+        addr = server.run(HOST, PORT)
 
         # Log the connectivity to Cadence
         log = "Connected to client with address {0}:{1}".format(addr[0], addr[1])

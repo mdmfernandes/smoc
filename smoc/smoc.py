@@ -1,19 +1,19 @@
-# This file is part of HEROiC
-# Copyright (C) 2018 Miguel Fernandes
+# This file is part of SMOC
+# Copyright (C) 2018  Miguel Fernandes
 #
-# HEROiC is free software: you can redistribute it and/or modify
+# SMOC is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# HEROiC is distributed in the hope that it will be useful,
+# SMOC is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-"""HEROiC main module."""
+"""SMOC main module."""
 
 import os
 import time
@@ -78,15 +78,15 @@ def print_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_c
 
     fname = f"{project_dir}/summary_{current_time}.txt"
 
-    summary = f"""*********************************************************
-**** HEROiC - Heuristic ciRcuit Optimzer for Cadence ****
-********************************************************* 
+    summary = f"""**********************************************************************
+* SMOC - A Stochastic Multi-objective Optimizer for Cadence Virtuoso *
+**********************************************************************
 * Running date and time: {current_time}              
 * Project name: {project_cfg['project_name']}            
 * Project path: {project_cfg['project_path']}        
 * Running mode (normal/debug): {running_mode}        
 * Running from checkpoint: {checkpoint_fname}        
-****************** Optimizer parameters *****************
+************************ Optimizer parameters ************************
 * Population size: {optimizer_cfg['pop_size']}
 * # of individuals to select: {optimizer_cfg['mu']}
 * # of children to produce: {optimizer_cfg['lambda']}
@@ -96,19 +96,19 @@ def print_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_c
 * Crossover probability: {optimizer_cfg['cx_prob']}
 * Mutation crowding degree: {optimizer_cfg['mut_eta']}
 * Crossover crowding degree: {optimizer_cfg['cx_eta']}
-**************** Optimization objectives ****************\n"""
+*********************** Optimization objectives **********************\n"""
     for key, val in objectives.items():
         summary += f"* {key}: {val[0]} [{val[1]}]\n"
-    summary += "**************** Optimization constraints ***************\n"
+    summary += "********************** Optimization constraints **********************\n"
     for key, val in constraints.items():
         summary += f"* {key}: min = {val[0]}, max = {val[1]}\n"
-    summary += "**************** Circuit design variables ***************\n"
+    summary += "********************** Circuit design variables **********************\n"
     for key, val in circuit_vars.items():
         summary += f"* {key}: min = {val[0][0]}, max = {val[0][1]} [{val[1]}]\n"
-    summary += "******************** Server parameters ******************\n"
+    summary += "************************** Server parameters *************************\n"
     summary += f"* Host: {server_cfg['host']}\n"
     summary += f"* Port: {server_cfg['port']}\n"
-    summary += "*********************************************************\n"
+    summary += "**********************************************************************\n"
 
     print(summary)
 
@@ -116,8 +116,8 @@ def print_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_c
         f.write(summary)
 
 
-def run_heroic(config_file, checkpoint_load, debug):
-    """Run HEROiC.
+def run_smoc(config_file, checkpoint_load, debug):
+    """Run SMOC.
 
     Arguments:
         config_file {str} -- path of configuration file
@@ -129,23 +129,23 @@ def run_heroic(config_file, checkpoint_load, debug):
                       in the configuration file
     """
     # Print license
-    print("\nHEROiC  Copyright (C) 2018  Miguel Fernandes")
+    print("\nSMOC  Copyright (C) 2018  Miguel Fernandes")
     print("This program comes with ABSOLUTELY NO WARRANTY.")
     print("This is free software, and you are welcome to redistribute it under the terms")
     print("of the GNU General Public License as published by the Free Software Foundation,")
     print("either version 3 of the License, or (at your option) any later version.")
     print("For more information, see <http://www.gnu.org/licenses/>\n")
-    
-    # Read config file and load the configurations into variables
-    heroic_cfg = file.read_yaml(config_file)
 
-    if not heroic_cfg:  # If config is not valid
+    # Read config file and load the configurations into variables
+    smoc_cfg = file.read_yaml(config_file)
+
+    if not smoc_cfg:  # If config is not valid
         print("[ERROR] Invalid file name or config...")
         print("\n**** Ending program... Bye! ****")
         return 1
 
     # Start the client
-    server_cfg = heroic_cfg['server_cfg']
+    server_cfg = smoc_cfg['server_cfg']
     try:
         print("Starting client...")
         client = Client()
@@ -165,7 +165,7 @@ def run_heroic(config_file, checkpoint_load, debug):
         print("[INFO] Loading simulator...")
         res_vars, sim_multi = load_simulator(client)
 
-        circuit_vars = heroic_cfg['circuit_vars']
+        circuit_vars = smoc_cfg['circuit_vars']
         diff = set(circuit_vars.keys()) - set(res_vars.keys())
 
         if diff:  # If it's not empty (i.e. bool(diff) is True)
@@ -173,10 +173,10 @@ def run_heroic(config_file, checkpoint_load, debug):
             raise ValueError(err)
 
         # Get the remaining configs
-        project_cfg = heroic_cfg['project_cfg']
-        optimizer_cfg = heroic_cfg['optimizer_cfg']
-        objectives = heroic_cfg['objectives']
-        constraints = heroic_cfg['constraints']
+        project_cfg = smoc_cfg['project_cfg']
+        optimizer_cfg = smoc_cfg['optimizer_cfg']
+        objectives = smoc_cfg['objectives']
+        constraints = smoc_cfg['constraints']
 
         # Get current date and time
         current_time = time.strftime("%Y%m%d_%H-%M", time.localtime())
@@ -213,13 +213,13 @@ def run_heroic(config_file, checkpoint_load, debug):
         objectives_tmp = {key: val[0] for key, val in objectives.items()}
 
         # Load the optimizer
-        heroic_ga = OptimizerNSGA2(objectives_tmp, constraints, circuit_vars_tmp,
+        smoc_ga = OptimizerNSGA2(objectives_tmp, constraints, circuit_vars_tmp,
                                    optimizer_cfg['pop_size'], optimizer_cfg['max_gen'], client,
                                    optimizer_cfg['mut_prob'], optimizer_cfg['cx_prob'],
                                    optimizer_cfg['mut_eta'], optimizer_cfg['cx_eta'], debug)
 
         # Run the GA
-        fronts, logbook = heroic_ga.run_ga(checkpoint_fname,
+        fronts, logbook = smoc_ga.run_ga(checkpoint_fname,
                                            optimizer_cfg['mu'],
                                            optimizer_cfg['lambda'],
                                            sim_multi, checkpoint_load,

@@ -1,13 +1,13 @@
 #!/usr/bin/env python
-# This file is part of HEROiC
-# Copyright (C) 2018 Miguel Fernandes
+# This file is part of SMOC
+# Copyright (C) 2018  Miguel Fernandes
 #
-# HEROiC is free software: you can redistribute it and/or modify
+# SMOC is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# HEROiC is distributed in the hope that it will be useful,
+# SMOC is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
@@ -20,14 +20,14 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name='HEROiC',
+    name='SMOC',
     version='0.1.0',
-    description='Heuristic ciRcuit Optimzer for Cadence',
+    description='A Stochastic Multi-objective Optimizer for Cadence Virtuoso',
     long_description=long_description,
     long_description_content_type='text/markdown',
     author='Miguel Fernandes',
-    author_email='mdm.fernandes@gmail.com',
-    url='https://github.com/mdmfernandes/heroic',
+    author_email='projects@mdmfernandes.com',
+    url='https://github.com/mdmfernandes/smoc',
     packages=find_packages(),
     keywords=[
         'evolutionary algorithms', 'genetic algorithms', 'nsga-ii', 'circuit optimization',
@@ -46,7 +46,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'heroic = heroic.__main__:main'
+            'smoc = smoc.__main__:main'
         ]
     },
     python_requires='>=3.6',
