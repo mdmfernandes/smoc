@@ -19,7 +19,6 @@ import array
 import copy
 import math
 import random
-import textwrap
 import time
 
 from deap import algorithms, base, creator, tools
@@ -30,7 +29,7 @@ from ..util import file
 
 # Organize everything in the class
 class OptimizerNSGA2:
-    """A simulation-based circuit optimizer based on the NSGA2 algorithm.
+    """A simulation-based circuit optimizer based on the NSGA-II algorithm.
 
     This optimizer is based on DEAP and requires connection to a circuit
     simulation environment (e.g. Cadence Virtuoso). It was designed to be
@@ -42,25 +41,28 @@ class OptimizerNSGA2:
     DEAP source: https://deap.readthedocs.io/en/master/
 
     Arguments:
-        objectives {dict} -- optimization objectives (fitness)
-        constraints {dict} -- optimization constraints (circuit requirements)
-        circuit_vars {dict} -- circuit design variables
-        pop_size {int} -- population size
-        max_gen {int} -- max generations
-
-    Keyword Arguments:
-        client {handler} -- the client that communicates with the simulator (default: None)
-        mut_prob {float} -- probability of mutation (default: 0.1)
-        cx_prob {float} -- probability of crossover (default: 0.8)
-        mut_eta {int} -- crowding degree of the mutation (default: 20)
-        cx_eta {int} -- crowding degree of the crossover (default: 20)
-        debug {bool} -- debug (default: False)
+        objectives (dict): optimization objectives (fitness).
+        constraints (dict): optimization constraints (circuit requirements).
+        circuit_vars (dict): circuit design variables.
+        pop_size (int): population size.
+        max_gen (int): max generations.
+        client (handler, optional): client that communicates with the simulator (default: None).
+        mut_prob (float, optional): probability of mutation (default: 0.1).
+        cx_prob (float, optional): probability of crossover (default: 0.8).
+        mut_eta (int, optional): crowding degree of the mutation (default: 20).
+        cx_eta (int, optional): crowding degree of the crossover (default: 20).
+        penalty_delta (float, optional): constant value of penalization for an invalid individual.
+            (default: 2)
+        penalty_weight (float, optional): multiplication factor of an invalid individual penalty.
+            Changes the variation rate of the fitness penalty with the distance from a valid value
+            (default: 1)
+        debug (bool, optional): debug (default: False)
     """
 
     # pylint: disable=too-many-instance-attributes,no-member
     def __init__(self,objectives, constraints, circuit_vars, pop_size, max_gen,
                  client=None, mut_prob=0.1, cx_prob=0.8, mut_eta=20, cx_eta=20,
-                 debug=False):
+                 penalty_delta=2, penalty_weight=1, debug=False):
         """Create the NSGA-II Optimizer using the DEAP library."""
         # If debugging we should have a fixed seed to have coherent results
         if debug:
@@ -74,6 +76,8 @@ class OptimizerNSGA2:
         self.circuit_vars = list(circuit_vars.keys())
         self.pop_size = pop_size
         self.max_gen = max_gen
+        self.penalty_delta = penalty_delta
+        self.penalty_weight = penalty_weight
 
         if client is not None:
             self.client = client
@@ -90,7 +94,7 @@ class OptimizerNSGA2:
         fitness_weights = tuple(objectives.values())
         creator.create("FitnessMulti", base.Fitness, weights=fitness_weights)
         # Define an individual
-        creator.create("Individual", array.array, typecode='d', fitness=creator.FitnessMulti)
+        creator.create("Individual", array.array, typecode='d', fitness=creator.FitnessMulti, result=dict)
 
         toolbox = base.Toolbox()
 
@@ -123,41 +127,38 @@ class OptimizerNSGA2:
 
     @staticmethod
     def uniform(bound_low, bound_up):
-        """Generate a random number between "low" and "up".
+        """Generate random numbers between "low" and "up".
 
-        If the arguments are a list, generates a list.
+        If the arguments are lists, generates a list of values.
 
         Arguments:
-            low {list} -- Lower bounds
-            up {list} -- Upper bounds
+            bound_low (list): lower bounds.
+            bound_up (list): upper bounds.
 
         Returns:
-            {list} -- Generated numbers
+            list: generated numbers.
         """
         return [random.uniform(a, b) for a, b in zip(bound_low, bound_up)]
 
-    ##################################################################
-    ##################################################################
-    ##################################################################
-    ##################################################################
-
-    # def handle_constraints(self, sim_res):
-
-    #     # Comparar constraints com res_sim...
-
-    #     # Baixar fitness de acordo com o resultado obtido.
-    #     # NOTA: Ver https://www.sciencedirect.com/science/article/pii/S0045782501003231
-    #     penalty = 1
-    #     return penalty
-
-    # https://groups.google.com/forum/#!topic/deap-users/SSd_zZ4XinI
     def eval_circuit(self, individuals):
-        """Evaluate the individuals and return their fitness.
+        """Evaluate individuals and return the fitness and simulation results.
+
+        This function also performs constraint handling, to penalize the individuals which
+        simulation results are not within the specifications defined in the configuration file.
+        More info about the constraint handling can be found here:
+        TODO: https://METER LINK CONSTRAINT HANDLING
 
         Arguments:
-            individuals {list} -- List of individuals to evaluate
+            individuals (list): list of individuals to evaluate. The number of individuals in the
+                list is equal to the number of parallel simulations to perform.
+
+        Raises:
+            KeyError: If the received response type or format is invalid.
+            TypeError: If the constraints limits are invalid.
+
+        Returns:
+            tuple: individuals' fitness and simulation results.
         """
-        # TODO: UPDATE DO DOCSTRING
         # A list with the variables of all individuals stored in dictionaries
         variables = []
 
@@ -179,48 +180,78 @@ class OptimizerNSGA2:
             print(f"Error: {err}")
 
         if res_type != 'updateAndRun':
-            raise Exception("[ERROR] Simulation error!!! Check variables defaults, etc.")
+            raise KeyError("[ERROR] Simulation error!!! Check variables defaults, etc.")
 
-        fitnesses = []
+        results = []
 
-        # Get the fitnesses for all individuals
+        # Get the fitnesses and simulation results for all individuals
         for idx in range(len(individuals)):
             fitness = []  # Fitnesses of one individual
+            penalty = 0
 
             sim_res_ind = sim_res[idx]  # Simulation results of one individual
 
-            for obj in self.objectives.keys():
+            if self.constraints:
+                for key, val in self.constraints.items():
+                    # Try to compute the penalty (if constraint has two limits)
+                    try:
+                        # Normalize the simulation result
+                        res_norm = (sim_res_ind[key] - float(val[0])) / (
+                            float(val[1]) - float(val[0]))
+
+                        # Check the limits
+                        if res_norm < 0:
+                            penalty += self.penalty_delta - res_norm
+                        elif res_norm > 1:
+                            penalty += self.penalty_delta + (res_norm - 1)
+
+                    # If contraint only has one limit
+                    except ValueError:
+
+                        # True - defined, false - undefined
+                        limit = [True, True]
+
+                        for lim, value in enumerate(val):
+                            try:
+                                # Get the constraint value and normalize it
+                                res_norm = (sim_res_ind[key] / float(value)) - 1
+                            # If can't convert to float, the limit is not defined
+                            except ValueError:
+                                limit[lim] = False
+
+                        # If founds two limits, it should be handled in the previous 'try'
+                        if limit[0] and limit[1]:
+                            raise TypeError("Both limits exist.. it shouldn't come here!!!")
+
+                        # If constraint has maximum allowed value
+                        if not limit[0] and res_norm > 0:
+                            penalty += self.penalty_delta + res_norm
+
+                        # If constraint has minimum allowed value
+                        elif not limit[1] and res_norm < 0:
+                            penalty += self.penalty_delta - res_norm
+
+            for key, val in self.objectives.items():
                 try:
-                    fitness.append(sim_res_ind[obj])
+                    # If the fitness is to maximize, change the penalty signal
+                    if val > 0:
+                        penalty = -penalty
+
+                    fitness.append(sim_res_ind[key] * math.exp(self.penalty_weight*penalty))
+
                 except KeyError as err:
-                    raise Exception(
+                    raise KeyError(
                         f"Eval circuit: there's no key {err} in the simulation results.")
 
-            # For now the penalty is applied with the same weight to all the objectives,
-            # but we can change this later for better performance
-            penalty = 1
+            results.append((fitness, sim_res_ind))
 
-            if self.constraints:
-                # Handling the contraints
-                # TODO: Just a test... se não estiverem na saturação
-                if sim_res_ind["SINAD"] < 60:
-                    penalty = 0.01
-
-            # Multiply the fitness by the penalty
-            #fitnesses = [fit * penalty for fit in fitnesses]
-            # TODO: Talvez verificar se o penalty for para minimizar ou maximizar
-            # e atribuir o penalty de acordo
-            fitness = [(1 / penalty) * fitness[0], penalty * fitness[1]]
-
-            fitnesses.append(tuple(fitness))
-
-        return fitnesses
+        return results
 
     def ga_mu_plus_lambda(self, mu, lambda_, sim_multi, checkpoint_load, checkpoint_fname,
                           checkpoint_freq, sel_best, verbose):
         """The (mu + lambda) evolutionary algorithm.
 
-        ADAPTED FROM: https://github.com/DEAP/deap/blob/master/deap/algorithms.py
+        Adapted from: https://github.com/DEAP/deap/blob/master/deap/algorithms.py
 
         The pseudo-code goes as follows:
             evaluate(population)
@@ -240,22 +271,23 @@ class OptimizerNSGA2:
         and "toolbox.evaluate" aliases to be registered in the toolbox.
 
         Arguments:
-            mu {float} -- number of individuals to select for the next generation
-            lambda_ {int} -- number of children to produce at each generation
-            sim_multi {int} -- number of parallel simulations
-            checkpoint_load {str or None} -- checkpoint file to load, if provided
-            checkpoint_fname {str} -- name of the checkpoint file to save
-            checkpoint_freq {str} -- checkpoint saving frequency (relative to gen)
-            sel_best {int} -- number of best individuals to log at each generation
-            verbose {bool} -- run in verbosity mode
+            mu (float): number of individuals to select for the next generation.
+            lambda_ (int): number of children to produce at each generation.
+            sim_multi (int): number of parallel simulations.
+            checkpoint_load (str or None): checkpoint file to load, if provided.
+            checkpoint_fname (str): name of the checkpoint file to save.
+            checkpoint_freq (str): checkpoint saving frequency (relative to gen).
+            sel_best (int): number of best individuals to log at each generation.
+            verbose (bool): run in verbosity mode.
 
         Returns:
-            tuple -- final population and the logbook of the evolution
+            tuple: final population and the logbook of the evolution.
         """
         # Create the statistics
         stats_pop = tools.Statistics()
         stats_fit = tools.Statistics(key=lambda ind: ind.fitness.values)
-        stats = tools.MultiStatistics(population=stats_pop, fitness=stats_fit)
+        stats_res = tools.Statistics(key=lambda ind: ind.result)
+        stats = tools.MultiStatistics(population=stats_pop, fitness=stats_fit, result=stats_res)
         stats.register("value", copy.deepcopy)
 
         # If a checkpoint is provided, continue from the given generation
@@ -267,9 +299,9 @@ class OptimizerNSGA2:
             start_gen = cp["generation"] + 1
             logbook = cp["logbook"]
             random.setstate(cp["rnd_state"])
-            print(f"""======== Running from a checkpoint ========
--- Population size: {len(population)}
--- Current generation: {start_gen}""")
+            print("======== Running from a checkpoint ========")
+            print(f"-- Population size: {len(population)}")
+            print(f"-- Current generation: {start_gen}")
 
         else:  # Create the population
             population = self.toolbox.population(n=self.pop_size)
@@ -277,7 +309,7 @@ class OptimizerNSGA2:
 
             # Create the logbook
             logbook = tools.Logbook()
-            logbook.header = 'gen', 'evals', 'population', 'fitness'
+            logbook.header = 'gen', 'evals', 'population', 'fitness', 'result'
 
             # Get the individuals that are not evaluated
             invalid_inds = [ind for ind in population if not ind.fitness.valid]
@@ -299,13 +331,14 @@ class OptimizerNSGA2:
                 print("[INFO] Evaluating the initial population")
 
             # Evaluate the individuals with an invalid fitness
-            # Fitnesses are the concatenation (sum) of all the fitnesses returned by "eval_circuit"
-            fitnesses = sum(map(self.toolbox.evaluate,
-                                tqdm(invalid_inds_multi, desc="Runs", unit="run",
-                                     disable=(not verbose))), [])
+            # Fitnesses are the concatenation (sum) of all the results returned by "eval_circuit"
+            results = sum(map(self.toolbox.evaluate,
+                              tqdm(invalid_inds_multi, desc="Runs", unit="run",
+                                   disable=(not verbose))), [])
 
-            for ind, fit in zip(invalid_inds, fitnesses):
-                ind.fitness.values = fit
+            for ind, res_ind in zip(invalid_inds, results):
+                ind.fitness.values = res_ind[0]
+                ind.result = res_ind[1]
 
             # Assign the crowding distance to the individuals (no selection is done)
             population = self.toolbox.select(population, len(population))
@@ -340,12 +373,13 @@ class OptimizerNSGA2:
 
             # Evaluate the individuals with an invalid fitness
             # Fitnesses are the concatenation (sum) of all the fitnesses returned by "eval_circuit"
-            fitnesses = sum(map(self.toolbox.evaluate,
-                                tqdm(invalid_inds_multi, desc="Runs", unit="run",
-                                     disable=(not verbose))), [])
+            results = sum(map(self.toolbox.evaluate,
+                              tqdm(invalid_inds_multi, desc="Runs", unit="run",
+                                   disable=(not verbose))), [])
 
-            for ind, fit in zip(invalid_inds, fitnesses):
-                ind.fitness.values = fit
+            for ind, res_ind in zip(invalid_inds, results):
+                ind.fitness.values = res_ind[0]
+                ind.result = res_ind[1]
 
             # Select the next generation population
             population[:] = self.toolbox.select(population + offspring, mu)
@@ -368,16 +402,27 @@ class OptimizerNSGA2:
                 for i, ind in enumerate(best_inds):
                     print(f"Ind #{i + 1} => ", end='')
 
+                    # Circuit variables/parameters
                     formatted_params = [
                         f"{key}: {ind[idx]:.2g}" for idx, key in enumerate(self.circuit_vars)
                     ]
                     print(' | '.join(formatted_params))
 
+                    # Fitness
+                    print("\t  Fitness -> ", end='')
                     formatted_fits = [
                         f"{key}: {ind.fitness.values[idx]:.2g}"
                         for idx, key in enumerate(list(self.objectives.keys()))
                     ]
                     print(' | '.join(formatted_fits))
+
+                    # Simulation results
+                    print("\t  Results -> ", end='')
+                    formatted_res = [
+                        f"{key}: {val:.2g}"
+                        for key, val in ind.result.items()
+                    ]
+                    print(' | '.join(formatted_res))
 
         print("\n====================== Optimization Finished ======================\n")
 
@@ -388,20 +433,22 @@ class OptimizerNSGA2:
         """Wrapper for the "ga_mu_plus_lambda" function.
 
         Arguments:
-            checkpoint_fname {str} -- name of the checkpoint file to save
-
-        Keyword Arguments:
-            mu {int or None} -- number of individuals to select for the next gen (default: None)
-            lambda_ {int or None} -- number of children to produce at each gen (default: None)
-            sim_multi {int} -- number of parallel simulations (default: 1)
-            checkpoint_load {str or None} -- name of the checkpoint file to load,
-                if provided (default: None)
-            checkpoint_freq {int} -- checkpoint saving frequency (gen per checkpoint) (default: 1)
-            sel_best {int} -- number of best individuals to log at each generation (default: 5)
-            verbose {bool} -- run in verbosity mode (default: True)
+            checkpoint_fname (str): name of the checkpoint file to save
+            mu (int or None, optional): number of individuals to select for the next gen
+                (default: None).
+            lambda_ (int or None, optional): number of children to produce at each gen
+                (default: None).
+            sim_multi (int, optional): number of parallel simulations (default: 1).
+            checkpoint_load (str or None, optional): -ame of the checkpoint file to load,
+                if provided (default: None).
+            checkpoint_freq (int, optional): checkpoint saving frequency (gen per checkpoint)
+                (default: 1).
+            sel_best (int, optional): number of best individuals to log at each generation
+                (default: 5).
+            verbose (bool, optional): run in verbosity mode (default: True).
 
         Returns:
-            tuple -- pareto fronts and the logbook of the evolution
+            tuple: pareto fronts and the logbook of the evolution.
         """
         # Evaluate mu and lambda_
         if mu is None:

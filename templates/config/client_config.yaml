@@ -16,6 +16,8 @@ optimizer_cfg:
     cx_prob: 0.8
     mut_eta: 20
     cx_eta: 20
+    penalty_delta: 2
+    penalty_weight: 1
     sel_best: 5
     checkpoint_freq: 1
 # Optimization objectives 
@@ -25,6 +27,9 @@ objectives:
     GAIN: [1.0, dB]
 # Circuit constraints
 # Format: [<minimum value>, <maximum value>]
+# A 'None' (or any non-number , except '_') can be used on a undesired limit
+# e.g. want to set the lower limit of BW to 5 MHz, without upper limit:
+#   BW: [5e6, None]
 constraints:
     GBW: [10e6, 1e9]
     GAIN: [30, 100]
