@@ -26,15 +26,15 @@ def eng_string(x, sig_figs=3, si=True):
                  -engineering-notation-for-mili-10e-3-and-micro-10e-6>
 
     Arguments:
-        x {float|int} -- Value to format
+        x (float or int): value to format.
 
     Keyword Arguments:
-        sig_figs {int} -- number of significant digits (default: 3)
-        si {bool} -- use SI suffix for exponent, e.g. k instead of e3,
-                     n instead of e-9 etc. (default: True)
+        sig_figs (int, optional): number of significant digits (default: 3).
+        si (boolean, optional): use SI suffix for exponent, e.g. k instead of
+            e3, n instead of e-9 etc. (default: True).
 
     Returns:
-        str -- the formatted value
+        str: the formatted value.
     """
 
     x = float(x)

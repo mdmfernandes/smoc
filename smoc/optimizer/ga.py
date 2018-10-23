@@ -46,17 +46,18 @@ class OptimizerNSGA2:
         circuit_vars (dict): circuit design variables.
         pop_size (int): population size.
         max_gen (int): max generations.
-        client (handler, optional): client that communicates with the simulator (default: None).
+        client (handler, optional): client that communicates with the simulator
+            (default: None).
         mut_prob (float, optional): probability of mutation (default: 0.1).
         cx_prob (float, optional): probability of crossover (default: 0.8).
         mut_eta (int, optional): crowding degree of the mutation (default: 20).
         cx_eta (int, optional): crowding degree of the crossover (default: 20).
-        penalty_delta (float, optional): constant value of penalization for an invalid individual.
-            (default: 2)
-        penalty_weight (float, optional): multiplication factor of an invalid individual penalty.
-            Changes the variation rate of the fitness penalty with the distance from a valid value
-            (default: 1)
-        debug (bool, optional): debug (default: False)
+        penalty_delta (float, optional): constant value of penalization for an
+            invalid individual (default: 2).
+        penalty_weight (float, optional): multiplication factor of an invalid
+            individual penalty. Changes the variation rate of the fitness
+            penalty with the distance from a valid value (default: 1).
+        debug (bool, optional): debug (default: False).
     """
 
     # pylint: disable=too-many-instance-attributes,no-member
@@ -94,7 +95,8 @@ class OptimizerNSGA2:
         fitness_weights = tuple(objectives.values())
         creator.create("FitnessMulti", base.Fitness, weights=fitness_weights)
         # Define an individual
-        creator.create("Individual", array.array, typecode='d', fitness=creator.FitnessMulti, result=dict)
+        creator.create("Individual", array.array, typecode='d', fitness=creator.FitnessMulti,
+                       result=dict)
 
         toolbox = base.Toolbox()
 
@@ -143,14 +145,16 @@ class OptimizerNSGA2:
     def eval_circuit(self, individuals):
         """Evaluate individuals and return the fitness and simulation results.
 
-        This function also performs constraint handling, to penalize the individuals which
-        simulation results are not within the specifications defined in the configuration file.
-        More info about the constraint handling can be found here:
+        This function also performs constraint handling, to penalize the
+        individuals whose simulation results are not within the specifications
+        defined in the configuration file. More info about the constraint
+        handling can be found here:
         TODO: https://METER LINK CONSTRAINT HANDLING
 
         Arguments:
-            individuals (list): list of individuals to evaluate. The number of individuals in the
-                list is equal to the number of parallel simulations to perform.
+            individuals (list): list of individuals to evaluate. The number of
+                individuals in the list is equal to the number of parallel
+                simulations to perform.
 
         Raises:
             KeyError: If the received response type or format is invalid.
@@ -434,17 +438,18 @@ class OptimizerNSGA2:
 
         Arguments:
             checkpoint_fname (str): name of the checkpoint file to save
-            mu (int or None, optional): number of individuals to select for the next gen
-                (default: None).
-            lambda_ (int or None, optional): number of children to produce at each gen
-                (default: None).
-            sim_multi (int, optional): number of parallel simulations (default: 1).
-            checkpoint_load (str or None, optional): -ame of the checkpoint file to load,
-                if provided (default: None).
-            checkpoint_freq (int, optional): checkpoint saving frequency (gen per checkpoint)
+            mu (int or None, optional): number of individuals to select for the
+                next gen (default: None).
+            lambda_ (int or None, optional): number of children to produce at
+                each gen (default: None).
+            sim_multi (int, optional): number of parallel simulations
                 (default: 1).
-            sel_best (int, optional): number of best individuals to log at each generation
-                (default: 5).
+            checkpoint_load (str or None, optional): -ame of the checkpoint
+                file to load, if provided (default: None).
+            checkpoint_freq (int, optional): checkpoint saving frequency (gen
+                per checkpoint) (default: 1).
+            sel_best (int, optional): number of best individuals to log at each
+                generation (default: 5).
             verbose (bool, optional): run in verbosity mode (default: True).
 
         Returns:

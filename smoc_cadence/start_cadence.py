@@ -91,16 +91,14 @@ def main():
     os.environ['SMOC_CLIENT_PORT'] = str(client_cfg['port'])
 
     # Print license
-    print("\nSMOC Copyright  (C) 2018  Miguel Fernandes")
+    print("\nSMOC  Copyright (C) 2018  Miguel Fernandes")
     print("This program comes with ABSOLUTELY NO WARRANTY.")
     print("This is free software, and you are welcome to redistribute it under the terms")
     print("of the GNU General Public License as published by the Free Software Foundation,")
     print("either version 3 of the License, or (at your option) any later version.")
     print("For more information, see <http://www.gnu.org/licenses/>\n")
 
-    # Prints logs
-    
-
+    # Print logs
     print("**********************************************************************")
     print("* SMOC - A Stochastic Multi-objective Optimizer for Cadence Virtuoso *")
     print("**********************************************************************")

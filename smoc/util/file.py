@@ -23,9 +23,9 @@ def read_yaml(fname):
     """Read the given file using YAML.
 
     Arguments:
-        fname {str} -- the file name
+        fname (str): file path.
     Returns:
-        cfg {any} -- the object returned by YAML
+        any: object returned by YAML.
     """
     if not fname:
         return False
@@ -40,10 +40,10 @@ def read_pickle(fname):
     """Read a pickle file and load the content to a variable.
 
     Arguments:
-        fname {str} -- name of the file to read from
+        fname (str): name of the file to read from.
 
     Returns:
-        {obj} -- file content
+        obj: file content.
     """
     with open(fname, 'rb') as f:
         obj = pickle.load(f)
@@ -54,8 +54,8 @@ def write_pickle(fname, obj):
     """Write a pickled representation of an object to a file.
 
     Arguments:
-        fname {str} -- name of the file to write to
-        obj {obj} -- object to write
+        fname (str): name of the file to write to.
+        obj (obj): object to write.
     """
     with open(fname, 'wb') as f:
         pickle.dump(obj, f)

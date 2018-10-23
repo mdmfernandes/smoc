@@ -54,6 +54,7 @@ setup(
         'deap>=1.2.2',
         'bokeh>=0.13.0',
         'tqdm>=4.25.0',
-        'pyyaml>=3.13'
+        'pyyaml>=3.13',
+        'socad>=0.1.0'
     ]
 )

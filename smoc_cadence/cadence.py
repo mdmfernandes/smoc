@@ -19,7 +19,18 @@ import os
 import sys
 
 import util
-from interface.server import Server
+
+# Try to import 'Server' from the global package 'socad'
+try:
+    from socad import Server
+except ImportError as err:
+    # If can't import from the global package
+    try:  # Try to import from interface.server
+        from interface.server import Server
+    except ImportError as err:
+        # If can't import the package, quit the program
+        print("[ERROR] {0}. Exiting...".format(err))
+        sys.exit('1')
 
 # Simulator files
 SIM_FILE = os.environ.get('SMOC_LOAD_FILE')
@@ -39,14 +50,14 @@ def process_skill_request(req):
     evaluated by Cadence.
 
     Arguments:
-        req {dict} -- request object
+        req (dict): request object.
 
     Raises:
-        KeyError -- if the input request format is invalid
-        TypeError -- if the type parameter of the received object is invalid
+        KeyError: if the input request format is invalid.
+        TypeError: if the type parameter of the received object is invalid.
 
     Returns:
-        str -- expression to be evaluated by Cadence
+        str: expression to be evaluated by Cadence.
     """
     try:
         type_ = req['type']
@@ -64,7 +75,7 @@ def process_skill_request(req):
     elif type_ == 'updateAndRun':
         # Store circuit variables in file
         util.store_vars_in_file(data, VAR_FILE)
-        res = 'updateAndRun("{0}" "{1}" "RESULT_FILE={2}" {3})'.format(
+        res = 'updateAndRun("{0}" "{1}" "SMOC_RESULTS_FILE={2}" {3})'.format(
             RUN_FILE, VAR_FILE, OUT_FILE, len(data))
     else:
         raise TypeError("Invalid object received from the client.")
@@ -76,13 +87,13 @@ def process_skill_response(msg):
     """Process the skill response from Cadence.
 
     Arguments:
-        msg {str} -- cadence response
+        msg (str): cadence response.
 
     Raises:
-        TypeError -- if the input message format is invalid
+        TypeError: if the input message format is invalid.
 
     Returns:
-        tuple -- response type (type_) and response object (obj)
+        tuple: response type (type_) and response object (obj).
     """
     if "loadSimulator_OK" in msg:
         type_ = 'loadSimulator'
@@ -120,11 +131,11 @@ def main():
         log = "Connected to client with address {0}:{1}".format(addr[0], addr[1])
         server.send_skill(log)
 
-    except IOError as err:  # NOTE: "ConnectionError" nao existe no Python 2 -_-
+    except IOError as err:  # NOTE: "ConnectionError" don't exist in Python 2 -_-
         server.send_warn("[CONNECTION ERROR] {0}".format(err))
         return 1
 
-    code = 0    # Return code
+    code = 0  # Return code
     try:
         while True:
             # Wait for a client request
@@ -145,7 +156,7 @@ def main():
                 # Send the processed response to the client
                 server.send_data(dict(type=typ, data=obj))
 
-    except IOError as err:  # NOTE: "ConnectionError" nao existe no Python 2 -_-
+    except IOError as err:  # NOTE: "ConnectionError" don't exist in Python 2 -_-
         server.send_warn("[CONNECTION ERROR] {0}".format(err))
         code = 2
     except TypeError as err:
@@ -154,7 +165,7 @@ def main():
     except KeyError as err:
         server.send_warn("[KEY ERROR] {0}".format(err))
         code = 4
-        
+
     server.close(code)
     return code
 

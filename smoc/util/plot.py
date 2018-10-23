@@ -26,10 +26,10 @@ def plot_pareto_fronts(fronts, circuit_vars, objectives, plot_fname):
     """Plot the pareto fronts given by the optimizer.
 
     Arguments:
-        fronts {list} -- pareto fronts
-        circuit_vars {dict} -- circuit design variables w/ units
-        objectives {dict} -- circuit optimization objectives w/ units
-        plot_fname {str} -- path of the plot file
+        fronts (list): pareto fronts.
+        circuit_vars (dict): circuit design variables w/ units.
+        objectives (dict): circuit optimization objectives w/ units.
+        plot_fname (str): path of the plot file.
     """
     vars_names = list(circuit_vars.keys())
     vars_units = [var[1] for var in circuit_vars.values()]

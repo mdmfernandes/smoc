@@ -1,5 +1,5 @@
 ; This file is part of SMOC
-; Copyright (C) 2018 Miguel Fernandes
+; Copyright (C) 2018  Miguel Fernandes
 ;
 ; SMOC is free software: you can redistribute it and/or modify
 ; it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 ;; variable with the max number of parallel simulaions that can be performed.
 ;; 
 ;; @param {string} runDir - directory from where the scripts are runned. The
-;; design environment stores the log files in this directory.
+;;     design environment stores the log files in this directory.
 ;; @param {string} loadFile - name of file to load the simulator from
 ;; @param {number} simMulti - number of parallel simulations
 ;;

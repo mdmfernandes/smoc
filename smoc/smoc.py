@@ -18,7 +18,7 @@
 import os
 import time
 
-from .interface.client import Client
+from socad import Client
 from .optimizer.ga import OptimizerNSGA2
 from .util import file
 from .util import plot as plt
@@ -32,13 +32,14 @@ def load_simulator(client):
     inefficient.
 
     Arguments:
-        client {handler} -- client that communicates with the simulator
+        client (handler): client that communicates with the simulator.
 
     Raises:
-        TypeError -- if the server response is not from the expected type
+        KeyError: if the response format is invalid.
+        TypeError: if the server response is not from the expected type.
 
     Returns:
-        dict -- circuit design variables
+        dict: circuit design variables.
     """
     req = dict(type='loadSimulator', data=None)
     client.send_data(req)
@@ -57,21 +58,21 @@ def load_simulator(client):
 
 
 def print_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_cfg, server_cfg,
-                       objectives, constraints, circuit_vars, checkpoint_load, debug):
+                  objectives, constraints, circuit_vars, checkpoint_load, debug):
     """Print a summary with the project, circuit, and optimizer configurations.
 
     Arguments:
-        current_time {str} -- current date and time
-        sim_multi {int} -- number of parallel simulations
-        project_dir {str} -- project directory
-        project_cfg {dict} -- project configuration parameters
-        optimizer_cfg {dict} -- optimizer configuration parameters
-        server_cfg {dict} -- server configuration parameters
-        objectives {dict} -- optimization objectives
-        constraints {dict} -- optimization constraints
-        circuit_vars {dict} -- circuit design variables
-        checkpoint_load {str|None} -- checkpoint file to load, if provided
-        debug {bool} -- running mode (debug mode if True)
+        current_time (str): current date and time.
+        sim_multi (int): number of parallel simulations.
+        project_dir (str): project directory.
+        project_cfg (dict): project configuration parameters.
+        optimizer_cfg (dict): optimizer configuration parameters.
+        server_cfg (dict): server configuration parameters.
+        objectives (dict): optimization objectives.
+        constraints (dict): optimization constraints.
+        circuit_vars (dict): circuit design variables.
+        checkpoint_load (str or None): checkpoint file to load, if provided.
+        debug (bool): running mode (debug mode if True).
     """
     running_mode = "debug" if debug else "normal"
     checkpoint_fname = checkpoint_load.split('/')[-1].split('.')[0] if checkpoint_load else "no"
@@ -96,6 +97,8 @@ def print_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_c
 * Crossover probability: {optimizer_cfg['cx_prob']}
 * Mutation crowding degree: {optimizer_cfg['mut_eta']}
 * Crossover crowding degree: {optimizer_cfg['cx_eta']}
+* Fitness penalty delta: {optimizer_cfg['penalty_delta']}
+* Fitness penalty weight: {optimizer_cfg['penalty_weight']}
 *********************** Optimization objectives **********************\n"""
     for key, val in objectives.items():
         summary += f"* {key}: {val[0]} [{val[1]}]\n"
@@ -120,13 +123,16 @@ def run_smoc(config_file, checkpoint_load, debug):
     """Run SMOC.
 
     Arguments:
-        config_file {str} -- path of configuration file
-        checkpoint_load {str|None} -- checkpoint file to load, if provided
-        debug {bool} -- running mode (debug mode if True)
+        config_file (str): path of configuration file.
+        checkpoint_load (str or None): checkpoint file to load, if provided.
+        debug (boolean): running mode (debug mode if True).
 
     Raises:
-        ValueError -- if the circuit variables don't match with the variables provided
-                      in the configuration file
+        ValueError: if the circuit variables don't match with the variables
+                    provided in the configuration file.
+    
+    Returns:
+        int: exit code.
     """
     # Print license
     print("\nSMOC  Copyright (C) 2018  Miguel Fernandes")
@@ -147,7 +153,7 @@ def run_smoc(config_file, checkpoint_load, debug):
     # Start the client
     server_cfg = smoc_cfg['server_cfg']
     try:
-        print("Starting client...")
+        print("[INFO] Starting client...")
         client = Client()
     except OSError as err:
         print(f"[SOCKET ERROR] {err}")
@@ -157,7 +163,7 @@ def run_smoc(config_file, checkpoint_load, debug):
     return_code = 0
 
     try:
-        print("Connecting to server...")
+        print("[INFO] Connecting to server...")
         addr = client.run(server_cfg['host'], server_cfg['port'])
         print(f"[INFO] Connected to server with the address {addr[0]}:{addr[1]}")
 
@@ -204,6 +210,7 @@ def run_smoc(config_file, checkpoint_load, debug):
         verbose = project_cfg['verbose']
 
         if verbose:
+            #print("\n")
             print_summary(current_time, sim_multi, project_dir, project_cfg,
                           optimizer_cfg, server_cfg, objectives, constraints,
                           circuit_vars, checkpoint_load, debug)
@@ -214,18 +221,20 @@ def run_smoc(config_file, checkpoint_load, debug):
 
         # Load the optimizer
         smoc_ga = OptimizerNSGA2(objectives_tmp, constraints, circuit_vars_tmp,
-                                   optimizer_cfg['pop_size'], optimizer_cfg['max_gen'], client,
-                                   optimizer_cfg['mut_prob'], optimizer_cfg['cx_prob'],
-                                   optimizer_cfg['mut_eta'], optimizer_cfg['cx_eta'], debug)
+                                 optimizer_cfg['pop_size'], optimizer_cfg['max_gen'], client,
+                                 optimizer_cfg['mut_prob'], optimizer_cfg['cx_prob'],
+                                 optimizer_cfg['mut_eta'], optimizer_cfg['cx_eta'],
+                                 optimizer_cfg['penalty_delta'], optimizer_cfg['penalty_weight'],
+                                 debug)
 
         # Run the GA
         fronts, logbook = smoc_ga.run_ga(checkpoint_fname,
-                                           optimizer_cfg['mu'],
-                                           optimizer_cfg['lambda'],
-                                           sim_multi, checkpoint_load,
-                                           optimizer_cfg['checkpoint_freq'],
-                                           optimizer_cfg['sel_best'],
-                                           verbose)
+                                         optimizer_cfg['mu'],
+                                         optimizer_cfg['lambda'],
+                                         sim_multi, checkpoint_load,
+                                         optimizer_cfg['checkpoint_freq'],
+                                         optimizer_cfg['sel_best'],
+                                         verbose)
 
         # End the connection with the server
         print("[INFO] Ending connection with the server")

@@ -26,20 +26,20 @@ class CustomFormatter(argparse.HelpFormatter):
     """Custom formatter for the "argparse" help.
 
     Arguments:
-        argparse {module} -- argparse
+        argparse (module): argparse.
 
     Returns:
-        str -- text to print
+        str: text to print.
     """
 
     def _format_action_invocation(self, action):
         """Format the 'argparse' help.
 
         Arguments:
-            action {object} -- 'argparse' action
+            action (object): 'argparse' action.
 
         Returns:
-            str -- text to print
+            str: text to print.
         """
         if not action.option_strings:
             metavar, = self._metavar_formatter(action, action.dest)(1)

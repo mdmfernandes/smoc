@@ -23,10 +23,10 @@ def get_vars_from_file(fname):
     """Get circuit variables from file and store in a dictionary.
 
     Arguments:
-        fname {str} -- file path
+        fname (str): file path.
 
     Returns:
-        variables {dict} -- circuit variables
+        dict: circuit variables.
     """
     variables = {}
 
@@ -67,8 +67,8 @@ def store_vars_in_file(variables, fname):
     """Store circuit variables in a file.
 
     Arguments:
-        var {dict} -- dictionary with the circuit variables
-        fname {str} -- file name
+        variables (dict): dictionary with the circuit variables.
+        fname (str): file name.
     """
     with open(fname, 'w') as f:
 
@@ -85,11 +85,11 @@ def get_results_from_file(fname):
     """Get simulation results from file and store in a dictionary.
 
     Arguments:
-        fname {str} -- file path
-        n_sims {int} -- number of simulations runing in parallel
+        fname (str): file path.
+        n_sims (int): number of simulations runing in parallel.
 
     Returns:
-        results_list {list} -- simulation results in a list of dictionaries
+        list: simulation results in a list of dictionaries.
     """
     results = {}
 
@@ -119,10 +119,10 @@ def get_parallel_simulations(fname):
     """Get the number of parallel simulations from the "loadSimulator" file.
 
     Arguments:
-        fname {string} -- file name
+        fname (string): file name.
 
     Returns:
-        int -- number of parallel simulations
+        int: number of parallel simulations.
     """
     with open(fname, 'r') as f:
         content = f.read()
