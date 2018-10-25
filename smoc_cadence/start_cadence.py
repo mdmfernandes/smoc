@@ -51,29 +51,27 @@ def main():
     project_dir = project_cfg['project_path'] + '/' + project_cfg['project_name']
     script_dir = project_dir + '/' + project_cfg['script_path']
 
+    # Check if directories exist
+    directories = [project_dir, script_dir]
+    for directory in directories:
+        if not os.path.exists(directory):
+            print("[ERROR] The directory {0} does not exist! Exiting SMOC...".format(directory))
+            return 2
+
     # Files
     load_simulator_file = script_dir + '/' + project_cfg['loadSimulator_file']
+    set_simulations_file = script_dir + '/' + project_cfg['setSimulations_file']
+    template_simulations_file = script_dir + '/' + project_cfg['templateSimulations_file']
     run_simulation_file = script_dir + '/' + project_cfg['runSimulation_fie']
     variables_file = script_dir + '/' + project_cfg['variables_file']
     results_file = project_dir + '/' + project_cfg['results_file']
 
-    if not os.path.exists(project_dir):
-        print("[ERROR] The directory {0} does not exist! Exiting SMOC...".format(project_dir))
-        return 2
-    elif not os.path.exists(script_dir):
-        print("[ERROR] The directory {0} does not exist! Exiting SMOC...".format(script_dir))
-        return 2
-    else:
-        if not os.path.isfile(load_simulator_file):
-            print("[ERROR] The file {0} does not exist! Exiting SMOC...".format(
-                load_simulator_file))
-            return 3
-        elif not os.path.isfile(run_simulation_file):
-            print("[ERROR] The file {0} does not exist! Exiting SMOC...".format(
-                run_simulation_file))
-            return 3
-        elif not os.path.isfile(variables_file):
-            print("[ERROR] The file {0} does not exist! Exiting SMOC...".format(variables_file))
+    # Check if files exist
+    files = [load_simulator_file, template_simulations_file, run_simulation_file,
+             variables_file]
+    for file in files:
+        if not os.path.isfile(file):
+            print("[ERROR] The file {0} does not exist! Exiting SMOC...".format(file))
             return 3
 
     # Create results file
@@ -83,6 +81,8 @@ def main():
     # Project
     os.environ['SMOC_ROOT_DIR'] = project_dir
     os.environ['SMOC_LOAD_FILE'] = load_simulator_file
+    os.environ['SMOC_SET_SIM_FILE'] = set_simulations_file
+    os.environ['SMOC_TEMPLATE_FILE'] = template_simulations_file
     os.environ['SMOC_RUN_FILE'] = run_simulation_file
     os.environ['SMOC_VARS_FILE'] = variables_file
     os.environ['SMOC_RESULTS_FILE'] = results_file
@@ -99,20 +99,22 @@ def main():
     print("For more information, see <http://www.gnu.org/licenses/>\n")
 
     # Print logs
-    print("**********************************************************************")
-    print("* SMOC - A Stochastic Multi-objective Optimizer for Cadence Virtuoso *")
-    print("**********************************************************************")
+    print("********************************************************************************")
+    print("****** SMOC - A Stochastic Multi-objective Optimizer for Cadence Virtuoso ******")
+    print("***************************************************************************")
     print("* Project name:", project_cfg['project_name'])
     print("* Project path:", project_dir)
     print("* Script path:", script_dir)
-    print("* Load simulator file:", load_simulator_file)
-    print("* Run simulation file:", run_simulation_file)
-    print("* Variables file:", variables_file)
-    print("* Results file:", results_file)
-    print("************************* Client Parameters **************************")
+    print("* Load simulator file (script folder):", project_cfg['loadSimulator_file'])
+    print("* Set simulations file (script folder):", project_cfg['setSimulations_file'])
+    print("* Simulations template file (script folder):", project_cfg['templateSimulations_file'])
+    print("* Run simulation file (script folder):", project_cfg['runSimulation_fie'])
+    print("* Variables file (script folder):", project_cfg['variables_file'])
+    print("* Results file (project folder):", project_cfg['results_file'])
+    print("****************************** Client Parameters *******************************")
     print("* Host:", client_cfg['host'])
     print("* Port:", client_cfg['port'])
-    print("**********************************************************************\n")
+    print("***************************************************************************\n")
 
     # Run Cadence
     call(['virtuoso', '-nograph', '-restore', 'cadence.il'])

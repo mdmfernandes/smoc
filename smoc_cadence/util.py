@@ -115,16 +115,14 @@ def get_results_from_file(fname):
     return results_list
 
 
-def get_parallel_simulations(fname):
-    """Get the number of parallel simulations from the "loadSimulator" file.
-
-    Arguments:
-        fname (string): file name.
-
-    Returns:
-        int: number of parallel simulations.
-    """
-    with open(fname, 'r') as f:
+def generate_simulations_file(template, fname, pop_size):
+    # Read the template
+    with open(template, 'r') as f:
         content = f.read()
 
-    return content.count('ocnxlBeginTest')
+    # Write the simulations file
+    with open(fname, 'w') as f:
+        for idx in range(1, pop_size + 1):
+            f.write('ocnxlBeginTest("test:{0}")\n'.format(idx))
+            f.write(content)
+            f.write("ocnxlEndTest()\n\n")

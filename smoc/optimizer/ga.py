@@ -22,7 +22,6 @@ import random
 import time
 
 from deap import algorithms, base, creator, tools
-from tqdm import tqdm
 
 from ..util import file
 
@@ -242,16 +241,18 @@ class OptimizerNSGA2:
                         penalty = -penalty
 
                     fitness.append(sim_res_ind[key] * math.exp(self.penalty_weight*penalty))
-
                 except KeyError as err:
                     raise KeyError(
                         f"Eval circuit: there's no key {err} in the simulation results.")
 
             results.append((fitness, sim_res_ind))
 
+            #print("FITNESS:", fitness)
+            #print("SIM RES:", sim_res_ind)
+
         return results
 
-    def ga_mu_plus_lambda(self, mu, lambda_, sim_multi, checkpoint_load, checkpoint_fname,
+    def ga_mu_plus_lambda(self, mu, lambda_, checkpoint_load, checkpoint_fname,
                           checkpoint_freq, sel_best, verbose):
         """The (mu + lambda) evolutionary algorithm.
 
@@ -277,7 +278,6 @@ class OptimizerNSGA2:
         Arguments:
             mu (float): number of individuals to select for the next generation.
             lambda_ (int): number of children to produce at each generation.
-            sim_multi (int): number of parallel simulations.
             checkpoint_load (str or None): checkpoint file to load, if provided.
             checkpoint_fname (str): name of the checkpoint file to save.
             checkpoint_freq (str): checkpoint saving frequency (relative to gen).
@@ -318,27 +318,21 @@ class OptimizerNSGA2:
             # Get the individuals that are not evaluated
             invalid_inds = [ind for ind in population if not ind.fitness.valid]
 
-            # Determine the number of simulation calls to the server
-            n_sim = math.ceil(len(invalid_inds) / sim_multi)
-
-            invalid_inds_multi = []
-
-            # Split the individuals in groups of sim_multi
-            for idx in range(n_sim):
-                invalid_inds_multi.append(invalid_inds[(sim_multi * idx):(sim_multi * (1 + idx))])
+            # The number of simulation calls to the server is the number of
+            # invalid individuals
+            num_sims = len(invalid_inds)
 
             if verbose:
-                msg = f"======== Evaluating the initial population ({len(invalid_inds)} inds)"
-                msg += f"  | {sim_multi} evals/run (max) ========"
+                msg = f"======== Evaluating the initial population ({num_sims} individuals) ========"
                 print(msg)
             else:
                 print("[INFO] Evaluating the initial population")
 
+            # Evaluation start time
+            start_time = time.time()
+
             # Evaluate the individuals with an invalid fitness
-            # Fitnesses are the concatenation (sum) of all the results returned by "eval_circuit"
-            results = sum(map(self.toolbox.evaluate,
-                              tqdm(invalid_inds_multi, desc="Runs", unit="run",
-                                   disable=(not verbose))), [])
+            results = self.toolbox.evaluate(invalid_inds)
 
             for ind, res_ind in zip(invalid_inds, results):
                 ind.fitness.values = res_ind[0]
@@ -348,8 +342,18 @@ class OptimizerNSGA2:
             population = self.toolbox.select(population, len(population))
 
             record = stats.compile(population)
-            logbook.record(gen=0, evals=len(invalid_inds), **record)
+            logbook.record(gen=0, evals=num_sims, **record)
 
+            # Evaluation time
+            secs = time.time() - start_time
+            mins, secs = divmod(secs, 60)
+            hours, mins = divmod(mins, 60)
+            msg = f"\nElapsed time: {hours:02.0f}h{mins:02.0f}m{secs:02.0f}s"
+            secs = secs / num_sims
+            mins, secs = divmod(secs, 60)
+            msg += f" | avg: {mins:02.0f}m{secs:02.2f}s/ind\n"
+            print(msg)
+            
         print("\n====================== Starting Optimization ======================")
 
         # Begin the generational process
@@ -361,25 +365,19 @@ class OptimizerNSGA2:
             # Evaluate the individuals with an invalid fitness
             invalid_inds = [ind for ind in offspring if not ind.fitness.valid]
 
-            # Determine the number of simulation calls to the server
-            n_sim = math.ceil(len(invalid_inds) / sim_multi)
-
-            invalid_inds_multi = []
-
-            # Split the individuals in groups of sim_multi
-            for idx in range(n_sim):
-                invalid_inds_multi.append(invalid_inds[(sim_multi * idx):(sim_multi * (1 + idx))])
+            # The number of simulation calls to the server is the number of
+            # invalid individuals
+            num_sims = len(invalid_inds)
 
             if verbose:
-                msg = f"\n======== Generation {gen}/{self.max_gen} | {len(invalid_inds)} evals"
-                msg += f" | {sim_multi} evals/run (max) ========"
+                msg = f"\n======== Generation {gen}/{self.max_gen} | {num_sims} evaluations ========"
                 print(msg)
 
+            # Evaluation start time
+            start_time = time.time()
+
             # Evaluate the individuals with an invalid fitness
-            # Fitnesses are the concatenation (sum) of all the fitnesses returned by "eval_circuit"
-            results = sum(map(self.toolbox.evaluate,
-                              tqdm(invalid_inds_multi, desc="Runs", unit="run",
-                                   disable=(not verbose))), [])
+            results = self.toolbox.evaluate(invalid_inds)
 
             for ind, res_ind in zip(invalid_inds, results):
                 ind.fitness.values = res_ind[0]
@@ -390,7 +388,7 @@ class OptimizerNSGA2:
 
             # Update the statistics with the new population
             record = stats.compile(population)
-            logbook.record(gen=gen, evals=len(invalid_inds), **record)
+            logbook.record(gen=gen, evals=num_sims, **record)
 
             # Save a checkpoint of the evolution
             if gen % checkpoint_freq == 0:
@@ -398,7 +396,18 @@ class OptimizerNSGA2:
                           rnd_state=random.getstate())
                 file.write_pickle(checkpoint_fname, cp)
 
-            if verbose:  # Show the best individuals of each generation
+            if verbose:
+                # Evaluation time
+                secs = time.time() - start_time
+                mins, secs = divmod(secs, 60)
+                hours, mins = divmod(mins, 60)
+                msg = f"\nElapsed time: {hours:02.0f}h{mins:02.0f}m{secs:02.0f}s"
+                secs = secs / num_sims
+                mins, secs = divmod(secs, 60)
+                msg += f" | avg: {mins:02.0f}m{secs:02.2f}s/ind"
+                print(msg)
+
+                # Show the best individuals of each generation
                 print(f"\n---- Best {sel_best} individuals of this generation ----")
 
                 best_inds = tools.selBest(population, sel_best)
@@ -432,7 +441,7 @@ class OptimizerNSGA2:
 
         return population, logbook
 
-    def run_ga(self, checkpoint_fname, mu=None, lambda_=None, sim_multi=1, checkpoint_load=None,
+    def run_ga(self, checkpoint_fname, mu=None, lambda_=None, checkpoint_load=None,
                checkpoint_freq=1, sel_best=5, verbose=True):
         """Wrapper for the "ga_mu_plus_lambda" function.
 
@@ -442,8 +451,6 @@ class OptimizerNSGA2:
                 next gen (default: None).
             lambda_ (int or None, optional): number of children to produce at
                 each gen (default: None).
-            sim_multi (int, optional): number of parallel simulations
-                (default: 1).
             checkpoint_load (str or None, optional): -ame of the checkpoint
                 file to load, if provided (default: None).
             checkpoint_freq (int, optional): checkpoint saving frequency (gen
@@ -466,7 +473,6 @@ class OptimizerNSGA2:
         result, logbook = self.ga_mu_plus_lambda(
             mu=mu,
             lambda_=lambda_,
-            sim_multi=sim_multi,
             checkpoint_load=checkpoint_load,
             checkpoint_fname=checkpoint_fname,
             checkpoint_freq=checkpoint_freq,
@@ -474,7 +480,10 @@ class OptimizerNSGA2:
             verbose=verbose)
 
         # ga_mu_plus_lambda execution time
-        print(f"Optimization total time: {time.time() - start_time:.3f} seconds\n")
+        secs = time.time() - start_time
+        mins, secs = divmod(secs, 60)
+        hours, mins = divmod(mins, 60)
+        print(f"Optimization total time: {hours:02.0f}h{mins:02.0f}m{secs:02.0f}s\n")
 
         # Get the pareto fronts from the optimization results
         fronts = tools.emo.sortLogNondominated(result, len(result))

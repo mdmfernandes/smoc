@@ -34,6 +34,8 @@ except ImportError as err:
 
 # Simulator files
 SIM_FILE = os.environ.get('SMOC_LOAD_FILE')
+SET_SIM_FILE = os.environ.get('SMOC_SET_SIM_FILE')
+TEMPLATE_FILE = os.environ.get('SMOC_TEMPLATE_FILE')
 RUN_FILE = os.environ.get('SMOC_RUN_FILE')
 VAR_FILE = os.environ.get('SMOC_VARS_FILE')
 ROOT_DIR = os.environ.get('SMOC_ROOT_DIR')
@@ -69,8 +71,9 @@ def process_skill_request(req):
         res = 'exit'
 
     elif type_ == 'loadSimulator':
-        sim_multi = util.get_parallel_simulations(SIM_FILE)
-        res = 'loadSimulator("{0}" "{1}" "{2}")'.format(ROOT_DIR, SIM_FILE, sim_multi)
+        pop_size = data
+        util.generate_simulations_file(TEMPLATE_FILE, SET_SIM_FILE, pop_size)
+        res = 'loadSimulator("{0}" "{1}" "{2}")'.format(ROOT_DIR, SIM_FILE, pop_size)
 
     elif type_ == 'updateAndRun':
         # Store circuit variables in file
@@ -99,10 +102,8 @@ def process_skill_response(msg):
         type_ = 'loadSimulator'
         # Get the original circuit variables (user defined) to send
         var = util.get_vars_from_file(VAR_FILE)
-        # Get the number of parallel simulations
-        sim_multi = util.get_parallel_simulations(SIM_FILE)
 
-        obj = var, sim_multi
+        obj = var
 
     elif "updateAndRun_OK" in msg:
         type_ = 'updateAndRun'

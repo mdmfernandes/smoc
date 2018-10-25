@@ -29,15 +29,16 @@
 ;; @param {string} loadFile - name of file to load the simulator from
 ;; @param {number} simMulti - number of parallel simulations
 ;;
-procedure( loadSimulator(runDir loadFile simMulti)
+procedure( loadSimulator(runDir loadFile popSize)
     ; Change he running directory
     cd(runDir)
 
     ; Load the simulator
     load(loadFile)
     
-    ; Set an environment variable with the number of parallel simulations
-    setShellEnvVar("SMOC_N_PARALLEL_SIM" simMulti)
+    ; Set an environment variable with the number of evaluations per simulation
+    ; run. At the begin, it is the population size.
+    setShellEnvVar("SMOC_NUM_EVALS" popSize)
 
     msg = "loadSimulator_OK"
 )
@@ -51,23 +52,31 @@ procedure( loadSimulator(runDir loadFile simMulti)
 ;; @param {number} numSim - number of simulations to perform
 ;;
 procedure( updateAndRun(runFile varFile resultFile numSim)
+    ; Update the circuit design variables
     load(varFile)
 
-    ; Set a environment variable with the number of requested simulations
-    sprintf(numSimStr "%d" numSim)   ; Convert to string
-    setShellEnvVar("SMOC_N_SIM" numSimStr)
+    ; Get the number of evaluations of the previous run
+    numEvals = getShellEnvVar("SMOC_NUM_EVALS")
+    numEvals = atoi(numEvals)   ; Convert to integer
 
-    ; Get the max number of parallel simulations
-    maxSim = getShellEnvVar("SMOC_N_PARALLEL_SIM")
-    maxSim = atoi(maxSim)   ;; Convert to integer
-
-    ; Disable unecessary simulations
-    if( numSim < maxSim then
-        for( i (numSim + 1) maxSim
+    ; Disable or enable the number of evaluations per required
+    if( numSim < numEvals then
+        for( i (numSim + 1) numEvals
             sprintf(testName "test:%d" i)
             ocnxlDisableTest(testName)
-        )               
+        )
+    else 
+        if( numSim > numEvals then
+            for( i (numEvals + 1) numSim
+                sprintf(testName "test:%d" i)
+                ocnxlEnableTest(testName)
+            )               
+        )             
     )
+
+    ; Update the env variable with the current number of evaluations
+    sprintf(numSimStr "%d" numSim)  ; Convert to string
+    setShellEnvVar("SMOC_NUM_EVALS" numSimStr)
 
     ; Set the results file
     setShellEnvVar(resultFile)
@@ -75,13 +84,6 @@ procedure( updateAndRun(runFile varFile resultFile numSim)
     ; run the simulation
     load(runFile) 
 
-    ; Re-enable the simulations
-    if( numSim < maxSim then
-        for( i (numSim + 1) maxSim
-            sprintf(testName "test:%d" i)
-            ocnxlEnableTest(testName)
-        )               
-    )
     msg = "updateAndRun_OK"
 )
 

@@ -4,6 +4,8 @@
         "project_path": "/home/mdm.fernandes/Projects",
         "script_path": "script",
         "loadSimulator_file": "loadSimulator.ocn",
+        "setSimulations_file": "setSimulations.ocn",
+        "templateSimulations_file": "templateSimulations.ocn",
         "runSimulation_fie": "run.ocn",
         "variables_file": "vars.ocn",
         "results_file": "sim_res"

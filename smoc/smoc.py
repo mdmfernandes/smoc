@@ -24,7 +24,7 @@ from .util import file
 from .util import plot as plt
 
 
-def load_simulator(client):
+def load_simulator(client, pop_size):
     """Load the Cadence simulator before starting the optimization.
 
     This task is performed once per run (contrary to the Cadence ADE) that
@@ -33,6 +33,7 @@ def load_simulator(client):
 
     Arguments:
         client (handler): client that communicates with the simulator.
+        pop_size (int): population size.
 
     Raises:
         KeyError: if the response format is invalid.
@@ -41,7 +42,7 @@ def load_simulator(client):
     Returns:
         dict: circuit design variables.
     """
-    req = dict(type='loadSimulator', data=None)
+    req = dict(type='loadSimulator', data=pop_size)
     client.send_data(req)
     res = client.recv_data()
 
@@ -57,13 +58,12 @@ def load_simulator(client):
     return data
 
 
-def print_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_cfg, server_cfg,
+def print_summary(current_time, project_dir, project_cfg, optimizer_cfg, server_cfg,
                   objectives, constraints, circuit_vars, checkpoint_load, debug):
     """Print a summary with the project, circuit, and optimizer configurations.
 
     Arguments:
         current_time (str): current date and time.
-        sim_multi (int): number of parallel simulations.
         project_dir (str): project directory.
         project_cfg (dict): project configuration parameters.
         optimizer_cfg (dict): optimizer configuration parameters.
@@ -79,39 +79,38 @@ def print_summary(current_time, sim_multi, project_dir, project_cfg, optimizer_c
 
     fname = f"{project_dir}/summary_{current_time}.txt"
 
-    summary = f"""**********************************************************************
-* SMOC - A Stochastic Multi-objective Optimizer for Cadence Virtuoso *
-**********************************************************************
+    summary = f"""********************************************************************************
+****** SMOC - A Stochastic Multi-objective Optimizer for Cadence Virtuoso ******
+********************************************************************************
 * Running date and time: {current_time}              
 * Project name: {project_cfg['project_name']}            
 * Project path: {project_cfg['project_path']}        
 * Running mode (normal/debug): {running_mode}        
 * Running from checkpoint: {checkpoint_fname}        
-************************ Optimizer parameters ************************
+***************************** Optimizer parameters *****************************
 * Population size: {optimizer_cfg['pop_size']}
 * # of individuals to select: {optimizer_cfg['mu']}
 * # of children to produce: {optimizer_cfg['lambda']}
 * # of generations: {optimizer_cfg['max_gen']}
-* # of parallel simulations: {sim_multi}
 * Mutation probability: {optimizer_cfg['mut_prob']}
 * Crossover probability: {optimizer_cfg['cx_prob']}
 * Mutation crowding degree: {optimizer_cfg['mut_eta']}
 * Crossover crowding degree: {optimizer_cfg['cx_eta']}
 * Fitness penalty delta: {optimizer_cfg['penalty_delta']}
 * Fitness penalty weight: {optimizer_cfg['penalty_weight']}
-*********************** Optimization objectives **********************\n"""
+**************************** Optimization objectives ***************************\n"""
     for key, val in objectives.items():
         summary += f"* {key}: {val[0]} [{val[1]}]\n"
-    summary += "********************** Optimization constraints **********************\n"
+    summary += "*************************** Optimization constraints ***************************\n"
     for key, val in constraints.items():
         summary += f"* {key}: min = {val[0]}, max = {val[1]}\n"
-    summary += "********************** Circuit design variables **********************\n"
+    summary += "*************************** Circuit design variables ***************************\n"
     for key, val in circuit_vars.items():
         summary += f"* {key}: min = {val[0][0]}, max = {val[0][1]} [{val[1]}]\n"
-    summary += "************************** Server parameters *************************\n"
+    summary += "******************************* Server parameters ******************************\n"
     summary += f"* Host: {server_cfg['host']}\n"
     summary += f"* Port: {server_cfg['port']}\n"
-    summary += "**********************************************************************\n"
+    summary += "********************************************************************************\n"
 
     print(summary)
 
@@ -150,8 +149,13 @@ def run_smoc(config_file, checkpoint_load, debug):
         print("\n**** Ending program... Bye! ****")
         return 1
 
-    # Start the client
+    # Get the configs
+    project_cfg = smoc_cfg['project_cfg']
+    optimizer_cfg = smoc_cfg['optimizer_cfg']
+    objectives = smoc_cfg['objectives']
+    constraints = smoc_cfg['constraints']
     server_cfg = smoc_cfg['server_cfg']
+
     try:
         print("[INFO] Starting client...")
         client = Client()
@@ -167,9 +171,12 @@ def run_smoc(config_file, checkpoint_load, debug):
         addr = client.run(server_cfg['host'], server_cfg['port'])
         print(f"[INFO] Connected to server with the address {addr[0]}:{addr[1]}")
 
+        # Get the population size
+        pop_size = optimizer_cfg['pop_size']
+
         # Load the simulator
         print("[INFO] Loading simulator...")
-        res_vars, sim_multi = load_simulator(client)
+        res_vars = load_simulator(client, pop_size)
 
         circuit_vars = smoc_cfg['circuit_vars']
         diff = set(circuit_vars.keys()) - set(res_vars.keys())
@@ -177,12 +184,6 @@ def run_smoc(config_file, checkpoint_load, debug):
         if diff:  # If it's not empty (i.e. bool(diff) is True)
             err = "The circuit variables don't match with the variables provided in the file"
             raise ValueError(err)
-
-        # Get the remaining configs
-        project_cfg = smoc_cfg['project_cfg']
-        optimizer_cfg = smoc_cfg['optimizer_cfg']
-        objectives = smoc_cfg['objectives']
-        constraints = smoc_cfg['constraints']
 
         # Get current date and time
         current_time = time.strftime("%Y%m%d_%H-%M", time.localtime())
@@ -211,7 +212,7 @@ def run_smoc(config_file, checkpoint_load, debug):
 
         if verbose:
             #print("\n")
-            print_summary(current_time, sim_multi, project_dir, project_cfg,
+            print_summary(current_time, project_dir, project_cfg,
                           optimizer_cfg, server_cfg, objectives, constraints,
                           circuit_vars, checkpoint_load, debug)
 
@@ -221,7 +222,7 @@ def run_smoc(config_file, checkpoint_load, debug):
 
         # Load the optimizer
         smoc_ga = OptimizerNSGA2(objectives_tmp, constraints, circuit_vars_tmp,
-                                 optimizer_cfg['pop_size'], optimizer_cfg['max_gen'], client,
+                                 pop_size, optimizer_cfg['max_gen'], client,
                                  optimizer_cfg['mut_prob'], optimizer_cfg['cx_prob'],
                                  optimizer_cfg['mut_eta'], optimizer_cfg['cx_eta'],
                                  optimizer_cfg['penalty_delta'], optimizer_cfg['penalty_weight'],
@@ -231,7 +232,7 @@ def run_smoc(config_file, checkpoint_load, debug):
         fronts, logbook = smoc_ga.run_ga(checkpoint_fname,
                                          optimizer_cfg['mu'],
                                          optimizer_cfg['lambda'],
-                                         sim_multi, checkpoint_load,
+                                         checkpoint_load,
                                          optimizer_cfg['checkpoint_freq'],
                                          optimizer_cfg['sel_best'],
                                          verbose)
