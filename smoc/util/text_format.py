@@ -36,7 +36,6 @@ def eng_string(x, sig_figs=3, si=True):
     Returns:
         str: the formatted value.
     """
-
     x = float(x)
     sign = ''
     if x < 0:

@@ -2,7 +2,7 @@
 ocnxlRun( ?mode 'sweepsAndCorners ?nominalCornerEnabled t ?allCornersEnabled nil ?allSweepsEnabled nil ?verboseMode nil)
 
 ;====================== Open output file ======================
-out_path = getShellEnvVar("RESULT_FILE")
+out_path = getShellEnvVar("SMOC_RESULT_FILE")
 outf = outfile(out_path "w")
 
 ;====================== Print to file =========================

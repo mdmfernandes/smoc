@@ -103,7 +103,7 @@ def print_summary(current_time, project_dir, project_cfg, optimizer_cfg, server_
         summary += f"* {key}: {val[0]} [{val[1]}]\n"
     summary += "*************************** Optimization constraints ***************************\n"
     for key, val in constraints.items():
-        summary += f"* {key}: min = {val[0]}, max = {val[1]}\n"
+        summary += f"* {key}: min = {val[0][0]}, max = {val[0][1]} [{val[1]}]\n"
     summary += "*************************** Circuit design variables ***************************\n"
     for key, val in circuit_vars.items():
         summary += f"* {key}: min = {val[0][0]}, max = {val[0][1]} [{val[1]}]\n"
@@ -219,9 +219,10 @@ def run_smoc(config_file, checkpoint_load, debug):
         # Remove the units from the "circuit_vars" and from the "objectives"
         circuit_vars_tmp = {key: val[0] for key, val in circuit_vars.items()}
         objectives_tmp = {key: val[0] for key, val in objectives.items()}
+        constraints_tmp = {key: val[0] for key, val in constraints.items()}
 
         # Load the optimizer
-        smoc_ga = OptimizerNSGA2(objectives_tmp, constraints, circuit_vars_tmp,
+        smoc_ga = OptimizerNSGA2(objectives_tmp, constraints_tmp, circuit_vars_tmp,
                                  pop_size, optimizer_cfg['max_gen'], client,
                                  optimizer_cfg['mut_prob'], optimizer_cfg['cx_prob'],
                                  optimizer_cfg['mut_eta'], optimizer_cfg['cx_eta'],
@@ -248,7 +249,7 @@ def run_smoc(config_file, checkpoint_load, debug):
 
         # Print statistics
         print("[INFO] Plotting the pareto fronts...")
-        plt.plot_pareto_fronts(fronts, circuit_vars, objectives, plot_fname=plot_fname)
+        plt.plot_pareto_fronts(fronts, circuit_vars, objectives, constraints, plot_fname=plot_fname)
 
     except ConnectionError as err:
         print(f"[CONNECTION ERROR] {err}")
