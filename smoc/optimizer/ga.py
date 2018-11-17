@@ -189,8 +189,8 @@ class OptimizerNSGA2:
 
         # Get the fitnesses and simulation results for all individuals
         for idx in range(len(individuals)):
-            fitness = []  # Fitnesses of one individual
-            penalty = 0
+            fitness = []    # Fitnesses of one individual
+            pen = 0         # Fitness Penalty
 
             sim_res_ind = sim_res[idx]  # Simulation results of one individual
 
@@ -198,19 +198,24 @@ class OptimizerNSGA2:
                 for key, val in self.constraints.items():
                     # Try to compute the penalty (if constraint has two limits)
                     try:
-                        # Normalize the simulation result
-                        res_norm = (sim_res_ind[key] - float(val[0])) / (
-                            float(val[1]) - float(val[0]))
+                        # Try to convert the values to float
+                        val_0 = float(val[0])
+                        val_1 = float(val[1])
 
-                        # Check the limits
-                        if res_norm < 0:
-                            penalty += self.penalty_delta - res_norm
-                        elif res_norm > 1:
-                            penalty += self.penalty_delta + (res_norm - 1)
+                        # Normalize the simulation result
+                        if val_0 != val_1:
+                            res_norm = (sim_res_ind[key] - val_0) / (val_1 - val_0)
+                            # Check the limits
+                            if res_norm < 0:
+                                pen += self.penalty_delta - res_norm
+                            elif res_norm > 1:
+                                pen += self.penalty_delta + (res_norm - 1)
+                        # If the limits are equal
+                        elif val_0 == val_1 and sim_res_ind[key] != val_0:
+                            pen += self.penalty_delta + math.fabs(sim_res_ind[key] - val_0)
 
                     # If contraint only has one limit
                     except ValueError:
-
                         # True - defined, false - undefined
                         limit = [True, True]
 
@@ -224,26 +229,44 @@ class OptimizerNSGA2:
 
                         # If founds two limits, it should be handled in the previous 'try'
                         if limit[0] and limit[1]:
-                            raise TypeError("Both limits exist.. it shouldn't come here!!!")
+                            raise TypeError("Both limits exist.. it shouldn't be here!!!")
 
                         # If constraint has maximum allowed value
                         if not limit[0] and res_norm > 0:
-                            penalty += self.penalty_delta + res_norm
+                            pen += self.penalty_delta + res_norm
 
                         # If constraint has minimum allowed value
                         elif not limit[1] and res_norm < 0:
-                            penalty += self.penalty_delta - res_norm
+                            pen += self.penalty_delta - res_norm
 
             for key, val in self.objectives.items():
                 try:
+                    # Add the penalty weight to penalty
+                    penalty = pen * self.penalty_weight
+
+                    # Avoid overflow problems
+                    if penalty > 500:
+                        penalty = 500
+
                     # If the fitness is to maximize, change the penalty signal
                     if val > 0:
                         penalty = -penalty
 
-                    fitness.append(sim_res_ind[key] * math.exp(self.penalty_weight*penalty))
+                    tot_penalty = math.exp(self.penalty_weight*penalty)
+
+                    # Get the simulation result
+                    result = sim_res_ind[key]
+
+                    # If the simulation result is negative, invert the penalty
+                    if result < 0:
+                        tot_penalty = 1 / tot_penalty
+
+                    fitness.append(result * tot_penalty)
                 except KeyError as err:
                     raise KeyError(
                         f"Eval circuit: there's no key {err} in the simulation results.")
+                except OverflowError as err:
+                    raise ValueError(f"Overflow error while evaluating the circuit: {err}")
 
             results.append((fitness, sim_res_ind))
 
@@ -323,7 +346,7 @@ class OptimizerNSGA2:
             num_sims = len(invalid_inds)
 
             if verbose:
-                msg = f"======== Evaluating the initial population ({num_sims} individuals) ========"
+                msg = f"======= Evaluating the initial population ({num_sims} individuals) ======="
                 print(msg)
             else:
                 print("[INFO] Evaluating the initial population")
@@ -345,11 +368,11 @@ class OptimizerNSGA2:
             logbook.record(gen=0, evals=num_sims, **record)
 
             # Evaluation time
-            secs = time.time() - start_time
-            mins, secs = divmod(secs, 60)
+            total_time = time.time() - start_time
+            mins, secs = divmod(total_time, 60)
             hours, mins = divmod(mins, 60)
             msg = f"\nElapsed time: {hours:02.0f}h{mins:02.0f}m{secs:02.0f}s"
-            secs = secs / num_sims
+            secs = total_time / num_sims
             mins, secs = divmod(secs, 60)
             msg += f" | avg: {mins:02.0f}m{secs:02.2f}s/ind\n"
             print(msg)
@@ -398,11 +421,11 @@ class OptimizerNSGA2:
 
             if verbose:
                 # Evaluation time
-                secs = time.time() - start_time
-                mins, secs = divmod(secs, 60)
+                total_time = time.time() - start_time
+                mins, secs = divmod(total_time, 60)
                 hours, mins = divmod(mins, 60)
                 msg = f"\nElapsed time: {hours:02.0f}h{mins:02.0f}m{secs:02.0f}s"
-                secs = secs / num_sims
+                secs = total_time / num_sims
                 mins, secs = divmod(secs, 60)
                 msg += f" | avg: {mins:02.0f}m{secs:02.2f}s/ind"
                 print(msg)
