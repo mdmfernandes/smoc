@@ -322,10 +322,10 @@ class OptimizerNSGA2:
             # Load the dictionary from the pickled file
             cp = file.read_pickle(checkpoint_load)
             # Load the stored parameters
-            population = cp["population"]
-            start_gen = cp["generation"] + 1
-            logbook = cp["logbook"]
-            random.setstate(cp["rnd_state"])
+            population = cp['population']
+            start_gen = cp['generation'] + 1
+            logbook = cp['logbook']
+            random.setstate(cp['rnd_state'])
             print("======== Running from a checkpoint ========")
             print(f"-- Population size: {len(population)}")
             print(f"-- Current generation: {start_gen}")
@@ -415,7 +415,7 @@ class OptimizerNSGA2:
 
             # Save a checkpoint of the evolution
             if gen % checkpoint_freq == 0:
-                cp = dict(population=population, generation=gen, logbook=logbook,
+                cp = dict(generation=gen, population=population, logbook=logbook,
                           rnd_state=random.getstate())
                 file.write_pickle(checkpoint_fname, cp)
 
@@ -506,7 +506,10 @@ class OptimizerNSGA2:
         secs = time.time() - start_time
         mins, secs = divmod(secs, 60)
         hours, mins = divmod(mins, 60)
-        print(f"Optimization total time: {hours:02.0f}h{mins:02.0f}m{secs:02.0f}s\n")
+        print(f"Optimization total time: {hours:02.0f}h{mins:02.0f}m{secs:02.0f}s")
+        # Get current date and time
+        current_time = time.strftime("%H:%M:%S, %d of %B %Y", time.localtime())
+        print(f"Finished at {current_time}.\n")
 
         # Get the pareto fronts from the optimization results
         fronts = tools.emo.sortLogNondominated(result, len(result))

@@ -174,6 +174,13 @@ def run_smoc(config_file, checkpoint_load, debug):
         # Get the population size
         pop_size = optimizer_cfg['pop_size']
 
+        # Check if "mu" and "lambda" are defined in the config file.
+        # If not, theirvalue is equal to the "pop_size"
+        if not 'mu' in optimizer_cfg:
+            optimizer_cfg['mu'] = pop_size
+        if not 'lambda' in optimizer_cfg:
+            optimizer_cfg['lambda'] = pop_size
+
         # Load the simulator
         print("[INFO] Loading simulator...")
         res_vars = load_simulator(client, pop_size)
@@ -216,7 +223,7 @@ def run_smoc(config_file, checkpoint_load, debug):
                           optimizer_cfg, server_cfg, objectives, constraints,
                           circuit_vars, checkpoint_load, debug)
 
-        # Remove the units from the "circuit_vars" and from the "objectives"
+        # Remove the units from the "circuit_vars", "objectives" and "constraints"
         circuit_vars_tmp = {key: val[0] for key, val in circuit_vars.items()}
         objectives_tmp = {key: val[0] for key, val in objectives.items()}
         constraints_tmp = {key: val[0] for key, val in constraints.items()}
