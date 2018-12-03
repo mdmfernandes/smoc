@@ -15,6 +15,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 """SMOC main module."""
 
+import logging
 import os
 import time
 
@@ -58,13 +59,13 @@ def load_simulator(client, pop_size):
     return data
 
 
-def print_summary(current_time, project_dir, project_cfg, optimizer_cfg, server_cfg,
+def print_summary(log_file, current_time, project_cfg, optimizer_cfg, server_cfg,
                   objectives, constraints, circuit_vars, checkpoint_load, debug):
     """Print a summary with the project, circuit, and optimizer configurations.
 
     Arguments:
+        log_file (str): file where to print the summary.
         current_time (str): current date and time.
-        project_dir (str): project directory.
         project_cfg (dict): project configuration parameters.
         optimizer_cfg (dict): optimizer configuration parameters.
         server_cfg (dict): server configuration parameters.
@@ -77,9 +78,8 @@ def print_summary(current_time, project_dir, project_cfg, optimizer_cfg, server_
     running_mode = "debug" if debug else "normal"
     checkpoint_fname = checkpoint_load.split('/')[-1].split('.')[0] if checkpoint_load else "no"
 
-    fname = f"{project_dir}/summary_{current_time}.txt"
-
-    summary = f"""********************************************************************************
+    summary = f"""
+********************************************************************************
 ****** SMOC - A Stochastic Multi-objective Optimizer for Cadence Virtuoso ******
 ********************************************************************************
 * Running date and time: {current_time}              
@@ -114,8 +114,58 @@ def print_summary(current_time, project_dir, project_cfg, optimizer_cfg, server_
 
     print(summary)
 
-    with open(fname, 'w') as f:
+    with open(log_file, 'a') as f:
         f.write(summary)
+
+
+def create_logger(verbose, fname):
+    """Create a logger to print to console and file the program logs
+
+    The verbosity affects the messages type that are logged to file. All messages
+    are always logged to the console.
+    Verbose:
+        - 0: No messages
+        - 1: Only Error and Critical messages.
+        - 2+: Info, Warning, Error, and Critical messages.
+
+    Args:
+        verbose (int): program verbosity.
+
+    Returns:
+        logger: logger object.
+    """
+    # Create a custom logger
+    logger = logging.getLogger('smoc')
+    # The logger level should be equal or higher than the handlers level
+    logger.setLevel(logging.INFO)
+
+    # Create file handler if verbose > 0
+    if verbose > 0:
+        f_handler = logging.FileHandler(fname)
+        # Select handler level
+        if verbose == 1:
+            f_handler.setLevel(logging.ERROR) # Error, Critical
+        else:
+            f_handler.setLevel(logging.INFO) # Info, Warning, Error, Critical
+
+        # Format file handler
+        f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                                     datefmt='%Y-%m-%d %H:%M:%S')
+        f_handler.setFormatter(f_format)
+        # Add the file handler to the logger
+        logger.addHandler(f_handler)
+
+
+    # Create console handler
+    c_handler = logging.StreamHandler()
+    # Create formatters and add it to handlers
+    c_format = logging.Formatter('[%(asctime)s %(levelname)s] %(message)s', datefmt='%H:%M:%S')
+    c_handler.setFormatter(c_format)
+    c_handler.setLevel(logging.INFO) # Info, Warning, Error, Critical
+    # Add the handler to the logger
+    logger.addHandler(c_handler)
+
+    return logger
 
 
 def run_smoc(config_file, checkpoint_load, debug):
@@ -129,23 +179,15 @@ def run_smoc(config_file, checkpoint_load, debug):
     Raises:
         ValueError: if the circuit variables don't match with the variables
                     provided in the configuration file.
-    
+
     Returns:
         int: exit code.
     """
-    # Print license
-    print("\nSMOC  Copyright (C) 2018  Miguel Fernandes")
-    print("This program comes with ABSOLUTELY NO WARRANTY.")
-    print("This is free software, and you are welcome to redistribute it under the terms")
-    print("of the GNU General Public License as published by the Free Software Foundation,")
-    print("either version 3 of the License, or (at your option) any later version.")
-    print("For more information, see <http://www.gnu.org/licenses/>\n")
-
     # Read config file and load the configurations into variables
     smoc_cfg = file.read_yaml(config_file)
 
     if not smoc_cfg:  # If config is not valid
-        print("[ERROR] Invalid file name or config...")
+        print("[ERROR] Invalid config file...")
         print("\n**** Ending program... Bye! ****")
         return 1
 
@@ -156,20 +198,40 @@ def run_smoc(config_file, checkpoint_load, debug):
     constraints = smoc_cfg['constraints']
     server_cfg = smoc_cfg['server_cfg']
 
+    # Get current date and time
+    current_time = time.strftime("%Y%m%d_%H-%M", time.localtime())
+
+    # Define the checkpoint/logbook/plot file names
+    project_dir = f"{project_cfg['project_path']}/{project_cfg['project_name']}"
+    checkpoint_dir = project_dir + f"/{project_cfg['checkpoint_path']}"
+    checkpoint_fname = checkpoint_dir + f"/cp_{current_time}.pickle"
+    logbook_dir = project_dir + f"/{project_cfg['logbook_path']}"
+    logbook_fname = logbook_dir + f"/lb_{current_time}.pickle"
+    plot_dir = project_dir + f"/{project_cfg['plot_path']}"
+    plot_fname = plot_dir + f"/plt_{current_time}.html"
+
+    # Get the verbosity
+    verbose = project_cfg['verbose']
+
+    # The file where to print the logs
+    log_file = f"{project_dir}/{current_time}.log"
+
+    logger = create_logger(verbose, log_file)
+
     try:
-        print("[INFO] Starting client...")
+        logger.info("Starting client...")
         client = Client()
     except OSError as err:
-        print(f"[SOCKET ERROR] {err}")
+        logger.error("SOCKET - %s", err)
         print("\n**** Ending program... Bye! ****")
         return 2
 
     return_code = 0
 
     try:
-        print("[INFO] Connecting to server...")
+        logger.info("Connecting to server...")
         addr = client.run(server_cfg['host'], server_cfg['port'])
-        print(f"[INFO] Connected to server with the address {addr[0]}:{addr[1]}")
+        logger.info("Connected to server with the address %s:%s", addr[0], addr[1])
 
         # Get the population size
         pop_size = optimizer_cfg['pop_size']
@@ -182,7 +244,7 @@ def run_smoc(config_file, checkpoint_load, debug):
             optimizer_cfg['lambda'] = pop_size
 
         # Load the simulator
-        print("[INFO] Loading simulator...")
+        logger.info("Loading simulator...")
         res_vars = load_simulator(client, pop_size)
 
         circuit_vars = smoc_cfg['circuit_vars']
@@ -191,18 +253,6 @@ def run_smoc(config_file, checkpoint_load, debug):
         if diff:  # If it's not empty (i.e. bool(diff) is True)
             err = "The circuit variables don't match with the variables provided in the file"
             raise ValueError(err)
-
-        # Get current date and time
-        current_time = time.strftime("%Y%m%d_%H-%M", time.localtime())
-
-        # Define the checkpoint/logbook/plot file names
-        project_dir = f"{project_cfg['project_path']}/{project_cfg['project_name']}"
-        checkpoint_dir = project_dir + f"/{project_cfg['checkpoint_path']}"
-        checkpoint_fname = checkpoint_dir + f"/cp_{current_time}.pickle"
-        logbook_dir = project_dir + f"/{project_cfg['logbook_path']}"
-        logbook_fname = logbook_dir + f"/lb_{current_time}.pickle"
-        plot_dir = project_dir + f"/{project_cfg['plot_path']}"
-        plot_fname = plot_dir + f"/plt_{current_time}.html"
 
         # Create the required directories, if they do not exist
         if not os.path.exists(project_dir):
@@ -214,14 +264,9 @@ def run_smoc(config_file, checkpoint_load, debug):
         if not os.path.exists(plot_dir):
             os.makedirs(plot_dir)
 
-        # Get the verbosity
-        verbose = project_cfg['verbose']
-
-        if verbose:
-            #print("\n")
-            print_summary(current_time, project_dir, project_cfg,
-                          optimizer_cfg, server_cfg, objectives, constraints,
-                          circuit_vars, checkpoint_load, debug)
+        # Print the configurations summary
+        print_summary(log_file, current_time, project_cfg, optimizer_cfg, server_cfg,
+                      objectives, constraints, circuit_vars, checkpoint_load, debug)
 
         # Remove the units from the "circuit_vars", "objectives" and "constraints"
         circuit_vars_tmp = {key: val[0] for key, val in circuit_vars.items()}
@@ -246,7 +291,7 @@ def run_smoc(config_file, checkpoint_load, debug):
                                          verbose)
 
         # End the connection with the server
-        print("[INFO] Ending connection with the server")
+        logger.info("Ending connection with the server...")
         req = dict(type='info', data='exit')
         client.send_data(req)
         client.close()  # Close the client socket
@@ -255,17 +300,17 @@ def run_smoc(config_file, checkpoint_load, debug):
         file.write_pickle(logbook_fname, logbook)
 
         # Print statistics
-        print("[INFO] Plotting the pareto fronts...")
+        logger.info("Plotting the pareto fronts...")
         plt.plot_pareto_fronts(fronts, circuit_vars, objectives, constraints, plot_fname=plot_fname)
 
     except ConnectionError as err:
-        print(f"[CONNECTION ERROR] {err}")
+        logger.error("CONNECTION - %s", err)
         return_code = 3
     except (TypeError, ValueError) as err:
-        print(f"[TYPE/VALUE ERROR] {err}")
+        logger.error("TYPE/VALUE ERROR - %s", err)
         return_code = 4
     except KeyError as err:
-        print(f"[KEY ERROR] {err}")
+        logger.error("KEY ERROR - %s", err)
         return_code = 5
 
     # If there was an exception (return_code != 0) it's necessary to close the socket

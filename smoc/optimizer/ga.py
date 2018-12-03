@@ -17,6 +17,7 @@
 
 import array
 import copy
+import logging
 import math
 import random
 import time
@@ -25,6 +26,7 @@ from deap import algorithms, base, creator, tools
 
 from ..util import file
 
+logger = logging.getLogger('smoc.ga')
 
 # Organize everything in the class
 class OptimizerNSGA2:
@@ -180,10 +182,10 @@ class OptimizerNSGA2:
             res_type = res['type']
             sim_res = res['data']
         except KeyError as err:
-            print(f"Error: {err}")
+            logger.error(err)
 
         if res_type != 'updateAndRun':
-            raise KeyError("[ERROR] Simulation error!!! Check variables defaults, etc.")
+            raise KeyError("Simulation error!!! Check variables defaults, etc.")
 
         results = []
 
@@ -326,9 +328,9 @@ class OptimizerNSGA2:
             start_gen = cp['generation'] + 1
             logbook = cp['logbook']
             random.setstate(cp['rnd_state'])
-            print("======== Running from a checkpoint ========")
-            print(f"-- Population size: {len(population)}")
-            print(f"-- Current generation: {start_gen}")
+            logger.info("Running from a checkpoint!")
+            logger.info("-- Population size: %d", len(population))
+            logger.info("-- Current generation: %d\n", start_gen)
 
         else:  # Create the population
             population = self.toolbox.population(n=self.pop_size)
@@ -345,11 +347,7 @@ class OptimizerNSGA2:
             # invalid individuals
             num_sims = len(invalid_inds)
 
-            if verbose:
-                msg = f"======= Evaluating the initial population ({num_sims} individuals) ======="
-                print(msg)
-            else:
-                print("[INFO] Evaluating the initial population")
+            logger.info("Starting the initial evaluation | evaluations: %d.", num_sims)
 
             # Evaluation start time
             start_time = time.time()
@@ -371,13 +369,14 @@ class OptimizerNSGA2:
             total_time = time.time() - start_time
             mins, secs = divmod(total_time, 60)
             hours, mins = divmod(mins, 60)
-            msg = f"\nElapsed time: {hours:02.0f}h{mins:02.0f}m{secs:02.0f}s"
+            msg = f"Finished generation. Elapsed time: {hours:02.0f}h{mins:02.0f}m{secs:02.0f}s"
             secs = total_time / num_sims
             mins, secs = divmod(secs, 60)
             msg += f" | avg: {mins:02.0f}m{secs:02.2f}s/ind\n"
-            print(msg)
-            
-        print("\n====================== Starting Optimization ======================")
+            logger.info(msg)
+
+
+        print("====================== Starting Optimization ======================\n")
 
         # Begin the generational process
         for gen in range(start_gen, self.max_gen + 1):
@@ -392,9 +391,8 @@ class OptimizerNSGA2:
             # invalid individuals
             num_sims = len(invalid_inds)
 
-            if verbose:
-                msg = f"\n======== Generation {gen}/{self.max_gen} | {num_sims} evaluations ========"
-                print(msg)
+            msg = f"Starting generation {gen}/{self.max_gen} | evaluations: {num_sims}"
+            logger.info(msg)
 
             # Evaluation start time
             start_time = time.time()
@@ -419,48 +417,47 @@ class OptimizerNSGA2:
                           rnd_state=random.getstate())
                 file.write_pickle(checkpoint_fname, cp)
 
-            if verbose:
-                # Evaluation time
-                total_time = time.time() - start_time
-                mins, secs = divmod(total_time, 60)
-                hours, mins = divmod(mins, 60)
-                msg = f"\nElapsed time: {hours:02.0f}h{mins:02.0f}m{secs:02.0f}s"
-                secs = total_time / num_sims
-                mins, secs = divmod(secs, 60)
-                msg += f" | avg: {mins:02.0f}m{secs:02.2f}s/ind"
-                print(msg)
+            # Evaluation time
+            total_time = time.time() - start_time
+            mins, secs = divmod(total_time, 60)
+            hours, mins = divmod(mins, 60)
+            msg = f"Finished generation. "
+            msg += f"Elapsed time: {hours:02.0f}h{mins:02.0f}m{secs:02.0f}s | "
+            secs = total_time / num_sims
+            mins, secs = divmod(secs, 60)
+            msg += f"avg: {mins:02.0f}m{secs:02.2f}s/ind\n"
+            logger.info(msg)
 
-                # Show the best individuals of each generation
-                print(f"\n---- Best {sel_best} individuals of this generation ----")
+            # Show the best individuals of each generation
+            print(f"---- Best {sel_best} individuals of this generation ----")
 
-                best_inds = tools.selBest(population, sel_best)
+            best_inds = tools.selBest(population, sel_best)
 
-                for i, ind in enumerate(best_inds):
-                    print(f"Ind #{i + 1} => ", end='')
+            for i, ind in enumerate(best_inds):
+                print(f"Ind #{i + 1} => ", end='')
 
-                    # Circuit variables/parameters
-                    formatted_params = [
-                        f"{key}: {ind[idx]:.2g}" for idx, key in enumerate(self.circuit_vars)
-                    ]
-                    print(' | '.join(formatted_params))
+                # Circuit variables/parameters
+                formatted_params = [
+                    f"{key}: {ind[idx]:.2g}" for idx, key in enumerate(self.circuit_vars)
+                ]
+                print(' | '.join(formatted_params))
 
-                    # Fitness
-                    print("\t  Fitness -> ", end='')
-                    formatted_fits = [
-                        f"{key}: {ind.fitness.values[idx]:.2g}"
-                        for idx, key in enumerate(list(self.objectives.keys()))
-                    ]
-                    print(' | '.join(formatted_fits))
+                # Fitness
+                print("\t  Fitness -> ", end='')
+                formatted_fits = [
+                    f"{key}: {ind.fitness.values[idx]:.2g}"
+                    for idx, key in enumerate(list(self.objectives.keys()))
+                ]
+                print(' | '.join(formatted_fits))
 
-                    # Simulation results
-                    print("\t  Results -> ", end='')
-                    formatted_res = [
-                        f"{key}: {val:.2g}"
-                        for key, val in ind.result.items()
-                    ]
-                    print(' | '.join(formatted_res))
-
-        print("\n====================== Optimization Finished ======================\n")
+                # Simulation results
+                print("\t  Results -> ", end='')
+                formatted_res = [
+                    f"{key}: {val:.2g}"
+                    for key, val in ind.result.items()
+                ]
+                print(' | '.join(formatted_res))
+            print("")
 
         return population, logbook
 
@@ -502,14 +499,16 @@ class OptimizerNSGA2:
             sel_best=sel_best,
             verbose=verbose)
 
+        # Get current date and time
+        current_time = time.strftime("%H:%M:%S, %d of %B %Y", time.localtime())
+        logger.info("Optimization finished at %s.", current_time)
+
         # ga_mu_plus_lambda execution time
         secs = time.time() - start_time
         mins, secs = divmod(secs, 60)
         hours, mins = divmod(mins, 60)
-        print(f"Optimization total time: {hours:02.0f}h{mins:02.0f}m{secs:02.0f}s")
-        # Get current date and time
-        current_time = time.strftime("%H:%M:%S, %d of %B %Y", time.localtime())
-        print(f"Finished at {current_time}.\n")
+        msg = f"Optimization total time: {hours:02.0f}h{mins:02.0f}m{secs:02.0f}s\n"
+        logger.info(msg)
 
         # Get the pareto fronts from the optimization results
         fronts = tools.emo.sortLogNondominated(result, len(result))

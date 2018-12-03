@@ -95,6 +95,14 @@ def main():
     checkpoint_file = args.checkpoint_file
     debug = args.debug
 
+    # Print the program license
+    print("\nSMOC  Copyright (C) 2018  Miguel Fernandes")
+    print("This program comes with ABSOLUTELY NO WARRANTY.")
+    print("This is free software, and you are welcome to redistribute it under the terms")
+    print("of the GNU General Public License as published by the Free Software Foundation,")
+    print("either version 3 of the License, or (at your option) any later version.")
+    print("For more information, see <http://www.gnu.org/licenses/>\n")
+
     # Check if project_file exists
     if not os.path.isfile(project_file):
         print("[ERROR] Invalid CONFIG file. Exiting the program...")
