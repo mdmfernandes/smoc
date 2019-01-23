@@ -317,5 +317,5 @@ def run_smoc(config_file, checkpoint_load, debug):
     if return_code:
         client.close()
 
-    print("\n**** Closing socket and ending program... Bye! ****")
+    logger.info("Closing socket and exiting program... Bye!")
     return return_code
