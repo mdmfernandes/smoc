@@ -87,12 +87,10 @@ class OptimizerNSGA2:
         # Set bounds
         bound_low = []
         bound_up = []
-        precision = []
         # Get the bounds from the circuit_vars
         for val in circuit_vars.values():
             bound_low.append(float(val[0]))
             bound_up.append(float(val[1]))
-            precision.append(int(val[2]))
 
         # Define the Fitness
         fitness_weights = tuple(objectives.values())
@@ -104,7 +102,7 @@ class OptimizerNSGA2:
         toolbox = base.Toolbox()
 
         # random generated float
-        toolbox.register("attr_float", self.uniform, bound_low, bound_up, precision)
+        toolbox.register("attr_float", self.uniform, bound_low, bound_up)
         # Define an individual as a list of floats (iterate over "att_float"
         # and place the result in "creator.Individual")
         toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.attr_float)
@@ -131,7 +129,7 @@ class OptimizerNSGA2:
         self.toolbox = toolbox
 
     @staticmethod
-    def uniform(bound_low, bound_up, precision):
+    def uniform(bound_low, bound_up):
         """Generate random numbers between "low" and "up".
 
         If the arguments are lists, generates a list of values.
@@ -143,7 +141,7 @@ class OptimizerNSGA2:
         Returns:
             list: generated numbers.
         """
-        return [round(random.uniform(a, b), c) for a, b, c in zip(bound_low, bound_up, precision)]
+        return [random.uniform(a, b) for a, b in zip(bound_low, bound_up)]
 
     def eval_circuit(self, individuals):
         """Evaluate individuals and return the fitness and simulation results.
@@ -338,8 +336,6 @@ class OptimizerNSGA2:
             population = self.toolbox.population(n=self.pop_size)
             start_gen = 1
 
-            print(population)
-
             # Create the logbook
             logbook = tools.Logbook()
             logbook.header = 'gen', 'evals', 'population', 'fitness', 'result'
@@ -442,14 +438,14 @@ class OptimizerNSGA2:
 
                 # Circuit variables/parameters
                 formatted_params = [
-                    f"{key}: {ind[idx]}" for idx, key in enumerate(self.circuit_vars)
+                    f"{key}: {ind[idx]:.2g}" for idx, key in enumerate(self.circuit_vars)
                 ]
                 print(' | '.join(formatted_params))
 
                 # Fitness
                 print("\t  Fitness -> ", end='')
                 formatted_fits = [
-                    f"{key}: {ind.fitness.values[idx]}"
+                    f"{key}: {ind.fitness.values[idx]:.2g}"
                     for idx, key in enumerate(list(self.objectives.keys()))
                 ]
                 print(' | '.join(formatted_fits))
@@ -457,7 +453,7 @@ class OptimizerNSGA2:
                 # Simulation results
                 print("\t  Results -> ", end='')
                 formatted_res = [
-                    f"{key}: {val}"
+                    f"{key}: {val:.2g}"
                     for key, val in ind.result.items()
                 ]
                 print(' | '.join(formatted_res))
