@@ -5,6 +5,8 @@ Server: [![Python -V server](https://img.shields.io/badge/python-2.6%2B-blue.svg
 
 **SMOC** is a stochastic circuit optimizer based on the NSGA-II genetic algorithm (GA) for Cadence Virtuoso, written in Python. The GA is implemented using the [DEAP library][DEAP].
 
+**MORE INFO COMING SOON!!!**
+
 ## Prerequisites
 
 Aliquam hendrerit, libero ut ultricies euismod, ligula risus aliquet sapien, a consectetur ex est a leo.
@@ -23,7 +25,7 @@ Duis id libero vitae orci tincidunt consectetur. Cras scelerisque arcu eget libe
 
 ## Example
 
-CHECK TUTORIAL
+CHECK TUTORIAL (**Coming soon!!!**)
 
 ## Extras
 
