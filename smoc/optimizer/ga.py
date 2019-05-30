@@ -28,6 +28,7 @@ from ..util import file
 
 logger = logging.getLogger('smoc.ga')
 
+
 # Organize everything in the class
 class OptimizerNSGA2:
     """A simulation-based circuit optimizer based on the NSGA-II algorithm.
@@ -62,9 +63,20 @@ class OptimizerNSGA2:
     """
 
     # pylint: disable=too-many-instance-attributes,no-member
-    def __init__(self, objectives, constraints, circuit_vars, pop_size, max_gen,
-                 client=None, mut_prob=0.1, cx_prob=0.8, mut_eta=20, cx_eta=20,
-                 penalty_delta=2, penalty_weight=1, debug=False):
+    def __init__(self,
+                 objectives,
+                 constraints,
+                 circuit_vars,
+                 pop_size,
+                 max_gen,
+                 client=None,
+                 mut_prob=0.1,
+                 cx_prob=0.8,
+                 mut_eta=20,
+                 cx_eta=20,
+                 penalty_delta=2,
+                 penalty_weight=1,
+                 debug=False):
         """Create the NSGA-II Optimizer using the DEAP library."""
         # If debugging we should have a fixed seed to have coherent results
         if debug:
@@ -96,8 +108,8 @@ class OptimizerNSGA2:
         fitness_weights = tuple(objectives.values())
         creator.create("FitnessMulti", base.Fitness, weights=fitness_weights)
         # Define an individual
-        creator.create("Individual", array.array, typecode='d', fitness=creator.FitnessMulti,
-                       result=dict)
+        creator.create(
+            "Individual", array.array, typecode='d', fitness=creator.FitnessMulti, result=dict)
 
         toolbox = base.Toolbox()
 
@@ -119,12 +131,17 @@ class OptimizerNSGA2:
         ##self.toolbox.decorate("evaluate", (self.feasibility, 0, self.distance))
 
         # register the crossover operator
-        toolbox.register("mate", tools.cxSimulatedBinaryBounded,
-                         low=bound_low, up=bound_up, eta=cx_eta)
+        toolbox.register(
+            "mate", tools.cxSimulatedBinaryBounded, low=bound_low, up=bound_up, eta=cx_eta)
 
         # register the mutation operator
-        toolbox.register("mutate", tools.mutPolynomialBounded, low=bound_low,
-                         up=bound_up, eta=mut_eta, indpb=mut_prob)
+        toolbox.register(
+            "mutate",
+            tools.mutPolynomialBounded,
+            low=bound_low,
+            up=bound_up,
+            eta=mut_eta,
+            indpb=mut_prob)
 
         self.toolbox = toolbox
 
@@ -191,8 +208,8 @@ class OptimizerNSGA2:
 
         # Get the fitnesses and simulation results for all individuals
         for idx in range(len(individuals)):
-            fitness = []    # Fitnesses of one individual
-            pen = 0         # Fitness Penalty
+            fitness = []  # Fitnesses of one individual
+            pen = 0  # Fitness Penalty
 
             sim_res_ind = sim_res[idx]  # Simulation results of one individual
 
@@ -254,7 +271,7 @@ class OptimizerNSGA2:
                     if val > 0:
                         penalty = -penalty
 
-                    tot_penalty = math.exp(self.penalty_weight*penalty)
+                    tot_penalty = math.exp(self.penalty_weight * penalty)
 
                     # Get the simulation result
                     result = sim_res_ind[key]
@@ -265,8 +282,7 @@ class OptimizerNSGA2:
 
                     fitness.append(result * tot_penalty)
                 except KeyError as err:
-                    raise KeyError(
-                        f"Eval circuit: there's no key {err} in the simulation results.")
+                    raise KeyError(f"Eval circuit: there's no key {err} in the simulation results.")
                 except OverflowError as err:
                     raise ValueError(f"Overflow error while evaluating the circuit: {err}")
 
@@ -277,8 +293,8 @@ class OptimizerNSGA2:
 
         return results
 
-    def ga_mu_plus_lambda(self, mu, lambda_, checkpoint_load, checkpoint_fname,
-                          checkpoint_freq, sel_best, verbose):
+    def ga_mu_plus_lambda(self, mu, lambda_, checkpoint_load, checkpoint_fname, checkpoint_freq,
+                          sel_best, verbose):
         """The (mu + lambda) evolutionary algorithm.
 
         Adapted from: https://github.com/DEAP/deap/blob/master/deap/algorithms.py
@@ -375,7 +391,6 @@ class OptimizerNSGA2:
             msg += f" | avg: {mins:02.0f}m{secs:02.2f}s/ind\n"
             logger.info(msg)
 
-
         print("====================== Starting Optimization ======================\n")
 
         # Begin the generational process
@@ -404,17 +419,17 @@ class OptimizerNSGA2:
                 ind.fitness.values = res_ind[0]
                 ind.result = res_ind[1]
 
-            # Select the next generation population
-            population[:] = self.toolbox.select(population + offspring, mu)
-
-            # Update the statistics with the new population
+            # Update the statistics with the population
             record = stats.compile(population)
             logbook.record(gen=gen, evals=num_sims, **record)
 
             # Save a checkpoint of the evolution
             if gen % checkpoint_freq == 0:
-                cp = dict(generation=gen, population=population, logbook=logbook,
-                          rnd_state=random.getstate())
+                cp = dict(
+                    generation=gen,
+                    population=population,
+                    logbook=logbook,
+                    rnd_state=random.getstate())
                 file.write_pickle(checkpoint_fname, cp)
 
             # Evaluation time
@@ -438,31 +453,37 @@ class OptimizerNSGA2:
 
                 # Circuit variables/parameters
                 formatted_params = [
-                    f"{key}: {ind[idx]:.2g}" for idx, key in enumerate(self.circuit_vars)
+                    f"{key}: {ind[idx]:0.2g}" for idx, key in enumerate(self.circuit_vars)
                 ]
                 print(' | '.join(formatted_params))
 
                 # Fitness
                 print("\t  Fitness -> ", end='')
                 formatted_fits = [
-                    f"{key}: {ind.fitness.values[idx]:.2g}"
+                    f"{key}: {ind.fitness.values[idx]:0.2g}"
                     for idx, key in enumerate(list(self.objectives.keys()))
                 ]
                 print(' | '.join(formatted_fits))
 
                 # Simulation results
                 print("\t  Results -> ", end='')
-                formatted_res = [
-                    f"{key}: {val:.2g}"
-                    for key, val in ind.result.items()
-                ]
+                formatted_res = [f"{key}: {val:0.2g}" for key, val in ind.result.items()]
                 print(' | '.join(formatted_res))
             print("")
 
+            # Select the next generation population
+            population[:] = self.toolbox.select(population + offspring, mu)
+
         return population, logbook
 
-    def run_ga(self, checkpoint_fname, mu=None, lambda_=None, checkpoint_load=None,
-               checkpoint_freq=1, sel_best=5, verbose=True):
+    def run_ga(self,
+               checkpoint_fname,
+               mu=None,
+               lambda_=None,
+               checkpoint_load=None,
+               checkpoint_freq=1,
+               sel_best=5,
+               verbose=True):
         """Wrapper for the "ga_mu_plus_lambda" function.
 
         Arguments:
