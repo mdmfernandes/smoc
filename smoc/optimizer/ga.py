@@ -375,7 +375,6 @@ class OptimizerNSGA2:
             msg += f" | avg: {mins:02.0f}m{secs:02.2f}s/ind\n"
             logger.info(msg)
 
-
         print("====================== Starting Optimization ======================\n")
 
         # Begin the generational process
@@ -404,10 +403,7 @@ class OptimizerNSGA2:
                 ind.fitness.values = res_ind[0]
                 ind.result = res_ind[1]
 
-            # Select the next generation population
-            population[:] = self.toolbox.select(population + offspring, mu)
-
-            # Update the statistics with the new population
+            # Update the statistics with the population
             record = stats.compile(population)
             logbook.record(gen=gen, evals=num_sims, **record)
 
@@ -438,14 +434,14 @@ class OptimizerNSGA2:
 
                 # Circuit variables/parameters
                 formatted_params = [
-                    f"{key}: {ind[idx]:.2g}" for idx, key in enumerate(self.circuit_vars)
+                    f"{key}: {ind[idx]:0.2g}" for idx, key in enumerate(self.circuit_vars)
                 ]
                 print(' | '.join(formatted_params))
 
                 # Fitness
                 print("\t  Fitness -> ", end='')
                 formatted_fits = [
-                    f"{key}: {ind.fitness.values[idx]:.2g}"
+                    f"{key}: {ind.fitness.values[idx]:0.2g}"
                     for idx, key in enumerate(list(self.objectives.keys()))
                 ]
                 print(' | '.join(formatted_fits))
@@ -453,11 +449,14 @@ class OptimizerNSGA2:
                 # Simulation results
                 print("\t  Results -> ", end='')
                 formatted_res = [
-                    f"{key}: {val:.2g}"
+                    f"{key}: {val:0.2g}"
                     for key, val in ind.result.items()
                 ]
                 print(' | '.join(formatted_res))
             print("")
+
+            # Select the next generation population
+            population[:] = self.toolbox.select(population + offspring, mu)
 
         return population, logbook
 
