@@ -53,8 +53,10 @@ setup(
     install_requires=[
         'deap>=1.2.2',
         'bokeh>=0.13.0',
-        'tqdm>=4.25.0',
         'pyyaml>=3.13',
         'socad>=0.1.0'
+    ],
+    dependency_links=[
+      'git+git://github.com/mdmfernandes/socad#egg=SOCAD-0.1.0'
     ]
 )
