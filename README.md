@@ -3,7 +3,7 @@
 Client: [![Python -V client](https://img.shields.io/badge/python-3.6%2B-blue.svg)](https://www.python.org/downloads/release/python-360/)
 Server: [![Python -V server](https://img.shields.io/badge/python-2.6%2B-blue.svg)](https://www.python.org/downloads/release/python-260/) [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://github.com/mdmfernandes/smoc/blob/master/LICENSE)
 
-**More documentation will be available soon!**
+## This project is no longer maintained, as I no longer have access to Cadence Virtuoso. If you are interested in contributing and have any questions, feel free to contact me.
 
 **SMOC** is a stochastic circuit optimizer based on the NSGA-II genetic algorithm (GA) for Cadence Virtuoso, written in Python. The GA is implemented using the [DEAP library][DEAP].
 
