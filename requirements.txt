@@ -1,4 +1,4 @@
 bokeh==0.13.0
 -e git+git://github.com/mdmfernandes/socad#egg=SOCAD-0.1.0
 deap==1.2.2
-PyYAML==5.1.1
+PyYAML==5.4
